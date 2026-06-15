@@ -25,11 +25,16 @@ text_y_offset = 0;
 text_margin = 2;
 text_line_gap = 1.0;
 
+show_back_initials = true;
+back_initials_size = 7;
+back_initials_depth = 0.35;
+back_initials_margin = 1.5;
+
 corner_radius = 0;
 pocket_corner_radius = 0;
 
-// Set to "all", "base", or "text". Export "base" and "text" separately
-// for a two-color/multi-part setup in Orca Slicer.
+// Set to "all", "base", "text", or "initials". Export separate parts
+// for a multi-color/multi-part setup in Orca Slicer.
 part = "all";
 
 $fn = 48;
@@ -58,6 +63,10 @@ module body() {
                     [tape_size + tape_clearance, tape_size + tape_clearance],
                     pocket_corner_radius
                 );
+
+        if (show_back_initials) {
+            back_initials_void();
+        }
     }
 }
 
@@ -73,6 +82,28 @@ function string_slice(value, start, end, i = undef) =
     current >= end
         ? ""
         : str(value[current], string_slice(value, start, end, current + 1));
+
+function initials_from(value, i = 0) =
+    i >= len(value)
+        ? ""
+        : str(
+            value[i] != " " && (i == 0 || value[i - 1] == " ")
+                ? value[i]
+                : "",
+            initials_from(value, i + 1)
+        );
+
+function left_initials(value) =
+    let(initials = initials_from(value))
+    len(initials) <= 1
+        ? initials
+        : string_slice(initials, 0, ceil(len(initials) / 2));
+
+function right_initials(value) =
+    let(initials = initials_from(value))
+    len(initials) <= 1
+        ? initials
+        : string_slice(initials, ceil(len(initials) / 2), len(initials));
 
 function space_indices(value) = search(" ", value, 0)[0];
 
@@ -95,6 +126,15 @@ function fit_line_size(line) =
     text_width(line) <= 0
         ? text_size
         : min(text_size, text_size * usable_text_width() / text_width(line));
+
+function fit_box_size(line, max_size, max_width, max_height) =
+    text_width(line, max_size) <= 0 || text_box_height(line, max_size) <= 0
+        ? max_size
+        : min(
+            max_size,
+            max_size * max_width / text_width(line, max_size),
+            max_size * max_height / text_box_height(line, max_size)
+        );
 
 function split_line_1(value, split_at) = string_slice(value, 0, split_at);
 
@@ -157,6 +197,46 @@ module text_line(line, size, y) {
             );
 }
 
+module back_initials_text(line, x) {
+    section_width =
+        max(0.1, (tag_length - (tape_size + tape_clearance)) / 2 - 2 * back_initials_margin);
+    section_height = max(0.1, tag_width - 2 * back_initials_margin);
+    fitted_size = fit_box_size(line, back_initials_size, section_width, section_height);
+
+    if (line != "") {
+        translate([x, 0])
+            mirror([0, 1])
+                text(
+                    line,
+                    size = fitted_size,
+                    font = font_name,
+                    halign = "center",
+                    valign = "center"
+                );
+    }
+}
+
+module back_initials_3d(extra_depth = 0) {
+    pocket_width = tape_size + tape_clearance;
+    side_center = (tag_length + pocket_width) / 4;
+
+    if (show_back_initials) {
+        translate([0, 0, -extra_depth])
+            linear_extrude(height = min(back_initials_depth, tag_thickness) + 2 * extra_depth) {
+                back_initials_text(left_initials(person_name), -side_center);
+                back_initials_text(right_initials(person_name), side_center);
+            }
+    }
+}
+
+module back_initials_void() {
+    back_initials_3d(0.01);
+}
+
+module back_initials_inlay() {
+    back_initials_3d(0);
+}
+
 module raised_name(text) {
     single_fit_size = min(text_size, fit_line_size(text));
     single_line_size = clamp(single_fit_size, text_min_size, text_size);
@@ -189,7 +269,10 @@ if (part == "base") {
     body();
 } else if (part == "text") {
     raised_name(person_name);
+} else if (part == "initials") {
+    back_initials_inlay();
 } else {
     color("black") body();
     color("white") raised_name(person_name);
+    color("white") back_initials_inlay();
 }

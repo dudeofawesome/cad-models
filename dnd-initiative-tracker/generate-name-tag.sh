@@ -18,6 +18,10 @@ text_height="0.5"
 text_y_offset="0"
 text_margin="2"
 text_line_gap="1.0"
+show_back_initials="true"
+back_initials_size="7"
+back_initials_depth="0.35"
+back_initials_margin="1.5"
 corner_radius="0"
 pocket_corner_radius="0"
 output_dir="$script_dir/output"
@@ -42,6 +46,10 @@ usage() {
         "  --text-y-offset MM            Move text up/down across tag width" \
         "  --text-margin MM              Left/right and top/bottom text margin" \
         "  --text-line-gap MM            Vertical gap between two text lines" \
+        "  --back-initials-size MM       Back initials max text size" \
+        "  --back-initials-depth MM      Back initials flush inlay depth" \
+        "  --back-initials-margin MM     Back initials side-region margin" \
+        "  --no-back-initials            Disable back initials" \
         "  --corner-radius MM            Outer corner radius" \
         "  --pocket-corner-radius MM     Pocket corner radius" \
         "  --output-dir PATH             Output directory" \
@@ -76,6 +84,22 @@ while [[ $# -gt 0 ]]; do
             text_line_gap="$2"
             shift 2
             ;;
+        --back-initials-size)
+            require_value "$@"
+            back_initials_size="$2"
+            shift 2
+            ;;
+        --back-initials-depth)
+            require_value "$@"
+            back_initials_depth="$2"
+            shift 2
+            ;;
+        --back-initials-margin)
+            require_value "$@"
+            back_initials_margin="$2"
+            shift 2
+            ;;
+        --no-back-initials) show_back_initials="false"; shift ;;
         --corner-radius) require_value "$@"; corner_radius="$2"; shift 2 ;;
         --pocket-corner-radius)
             require_value "$@"
@@ -132,6 +156,10 @@ defs=(
     -D "text_y_offset=$text_y_offset"
     -D "text_margin=$text_margin"
     -D "text_line_gap=$text_line_gap"
+    -D "show_back_initials=$show_back_initials"
+    -D "back_initials_size=$back_initials_size"
+    -D "back_initials_depth=$back_initials_depth"
+    -D "back_initials_margin=$back_initials_margin"
     -D "corner_radius=$corner_radius"
     -D "pocket_corner_radius=$pocket_corner_radius"
 )
@@ -154,6 +182,10 @@ if [[ "$split_colors" == "1" ]]; then
     render_part "text" "$output_dir/$file_name-text.stl"
     printf 'Wrote %s\n' "$output_dir/$file_name-base.stl"
     printf 'Wrote %s\n' "$output_dir/$file_name-text.stl"
+    if [[ "$show_back_initials" == "true" ]]; then
+        render_part "initials" "$output_dir/$file_name-initials.stl"
+        printf 'Wrote %s\n' "$output_dir/$file_name-initials.stl"
+    fi
 else
     render_part "all" "$output_dir/$file_name.3mf"
     printf 'Wrote %s\n' "$output_dir/$file_name.3mf"
