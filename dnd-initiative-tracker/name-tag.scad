@@ -102,7 +102,7 @@ function left_initials(value) =
 function right_initials(value) =
     let(initials = initials_from(value))
     len(initials) <= 1
-        ? initials
+        ? ""
         : string_slice(initials, ceil(len(initials) / 2), len(initials));
 
 function space_indices(value) = search(" ", value, 0)[0];
@@ -205,7 +205,7 @@ module back_initials_text(line, x) {
 
     if (line != "") {
         translate([x, 0])
-            mirror([0, 1])
+            mirror([1, 0])
                 text(
                     line,
                     size = fitted_size,
@@ -223,8 +223,8 @@ module back_initials_3d(extra_depth = 0) {
     if (show_back_initials) {
         translate([0, 0, -extra_depth])
             linear_extrude(height = min(back_initials_depth, tag_thickness) + 2 * extra_depth) {
-                back_initials_text(left_initials(person_name), -side_center);
-                back_initials_text(right_initials(person_name), side_center);
+                back_initials_text(left_initials(person_name), side_center);
+                back_initials_text(right_initials(person_name), -side_center);
             }
     }
 }
