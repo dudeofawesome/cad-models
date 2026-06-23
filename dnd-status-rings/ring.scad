@@ -50,7 +50,7 @@ module ring_status(
   depth=height / 3.5,
   font="Arial",
   kerning=0,
-  min_word_padding=1,
+  min_word_padding=10,
   start_angle = 0
 ) {
   word_deg = arc_angle(text_width(status_name, size, font) + kerning, radius);
