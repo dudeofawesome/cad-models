@@ -225,7 +225,7 @@ add_model_settings() {
   <object id="$assembly_object_id">
     <metadata key="name" value="$escaped_model_name"/>
     <metadata key="extruder" value="0"/>
-    <metadata key="outer_wall_line_width" value="$outer_wall_line_width"/>
+    <metadata key="wall_generator" value="arachne"/>
 
     <part id="$ring_object_id" subtype="normal_part">
       <metadata key="name" value="ring"/>
