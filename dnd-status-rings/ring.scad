@@ -13,6 +13,8 @@ function text_width(string, size, font) =
   )
   abs(metrics.offset[0]) + metrics.advance[0];
 function arc_angle(length, radius) = length / radius * 180 / PI;
+function str_toupper (string) =
+  chr([for(s=string) let(c=ord(s)) c<123 && c>96 ?c-32:c]);
 
 inner_diam_inches = 1;
 ring_thickness = 6;
@@ -22,12 +24,13 @@ status_text = "Concentrating";
 
 inner_diam = inch_to_mm(inner_diam_inches * 1.005);
 outer_diam = inner_diam + (ring_thickness * 2);
+upper_status_text = str_toupper(status_text);
 
+$fn = $preview ? 120 : 240;
 
 // base
-#color("black", $fn = $preview ? 120 : 240) difference() {
+#color("black") difference() {
   cylinder(r=outer_diam / 2, h=height, center=true);
-
   cylinder(r=inner_diam / 2, h=height + 0.1, center=true);
 
   // fillets
@@ -36,20 +39,27 @@ outer_diam = inner_diam + (ring_thickness * 2);
   down(height / 2) mirror([0, 0, 1]) fillet_cylinder_mask(r=outer_diam / 2, fillet=fillet_rad);
   down(height / 2) mirror([0, 0, 1]) fillet_hole_mask(r=inner_diam / 2, fillet=fillet_rad);
 
-  ring_status(status_text);
+  ring_status(upper_status_text);
 }
 // text
-color("white") ring_status(status_text);
+let(die_height = height * 2)
+color("white") difference() {
+  ring_status(upper_status_text);
+  difference() {
+    cylinder(r=outer_diam, h=die_height, center=true);
+    cylinder(r=outer_diam / 2, h=die_height + 0.1, center=true);
+  }
+}
 
 
 
 module ring_status(
   status_name,
-  radius=(((outer_diam - inner_diam) / 2) * 3/4) + (inner_diam / 2),
-  size=ring_thickness / 1.667,
+  radius=(((outer_diam - inner_diam) / 2) * 9/10) + (inner_diam / 2),
+  size=ring_thickness / 1.3,
   depth=height / 3.5,
-  font="Arial",
-  kerning=0,
+  font="Arial:style=Bold",
+  kerning=0.4,
   min_word_padding=10,
   start_angle = 0
 ) {
