@@ -50,10 +50,18 @@ module ring_status(
   depth=height / 3.5,
   font="Arial",
   kerning=0,
+  min_word_padding=1,
   start_angle = 0
 ) {
   word_deg = arc_angle(text_width(status_name, size, font) + kerning, radius);
+  padded_word_deg = word_deg + arc_angle(min_word_padding * 2, radius);
+  word_count = max(1, floor(360 / padded_word_deg));
+  word_spacing = 360 / word_count;
+  word_offset = (word_spacing - word_deg) / 2;
   echo(str("word_deg:", word_deg));
+  echo(str("padded_word_deg:", padded_word_deg));
+  echo(str("word_count:", word_count));
+  echo(str("word_spacing:", word_spacing));
 
   module draw_letter(word, kerning, index = 0, last_angle = 0) {
     letter = word[index];
@@ -69,19 +77,16 @@ module ring_status(
     }
 
     if (word[index + 1] != undef) draw_letter(word, kerning, index + 1, next_angle);
-    else {
-      remaining_deg = 360 - next_angle;
-      if (remaining_deg > word_deg) {
-        remaining_words = floor(remaining_deg / word_deg);
-        echo(str("remaining_words:", remaining_words));
-        word_space = remaining_deg / remaining_words;
-        echo(str("word_space:", word_space));
-        draw_letter(word, kerning, 0, next_angle + word_space);
-      }
-    }
   }
 
   up((height / 2 - depth) + 0.1)
   linear_extrude(depth)
-  draw_letter(status_name, kerning, 0, start_angle);
+  for (word_index = [0 : word_count - 1]) {
+    draw_letter(
+      status_name,
+      kerning,
+      0,
+      start_angle + word_offset + (word_index * word_spacing)
+    );
+  }
 }
