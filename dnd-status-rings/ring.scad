@@ -15,36 +15,39 @@ function text_width(string, size, font) =
 function arc_angle(length, radius) = length / radius * 180 / PI;
 
 inner_diam_inches = 1;
-inner_diam = inch_to_mm(inner_diam_inches * 1.005);
-outer_diam = inner_diam + 8;
-height = 4;
+ring_thickness = 6;
+height = 3;
 fillet_rad = 1.25;
 status_text = "Concentrating";
+
+inner_diam = inch_to_mm(inner_diam_inches * 1.005);
+outer_diam = inner_diam + (ring_thickness * 2);
 
 
 // base
 #color("black", $fn = $preview ? 120 : 240) difference() {
-  cylinder(r=outer_diam, h=height, center=true);
+  cylinder(r=outer_diam / 2, h=height, center=true);
 
-  cylinder(r=inner_diam, h=height + 0.1, center=true);
+  cylinder(r=inner_diam / 2, h=height + 0.1, center=true);
 
   // fillets
-  up(height / 2) fillet_cylinder_mask(r=outer_diam, fillet=fillet_rad);
-  up(height / 2) fillet_hole_mask(r=inner_diam, fillet=fillet_rad);
-  down(height / 2) mirror([0, 0, 1]) fillet_cylinder_mask(r=outer_diam, fillet=fillet_rad);
-  down(height / 2) mirror([0, 0, 1]) fillet_hole_mask(r=inner_diam, fillet=fillet_rad);
+  up(height / 2) fillet_cylinder_mask(r=outer_diam / 2, fillet=fillet_rad);
+  up(height / 2) fillet_hole_mask(r=inner_diam / 2, fillet=fillet_rad);
+  down(height / 2) mirror([0, 0, 1]) fillet_cylinder_mask(r=outer_diam / 2, fillet=fillet_rad);
+  down(height / 2) mirror([0, 0, 1]) fillet_hole_mask(r=inner_diam / 2, fillet=fillet_rad);
 
   ring_status(status_text);
 }
+// text
 color("white") ring_status(status_text);
 
 
 
 module ring_status(
   status_name,
-  radius=((outer_diam - inner_diam) * 3/4) + inner_diam,
-  size=4.8,
-  depth=1.2,
+  radius=(((outer_diam - inner_diam) / 2) * 3/4) + (inner_diam / 2),
+  size=ring_thickness / 1.667,
+  depth=height / 3.5,
   font="Arial",
   kerning=0,
   start_angle = 0
