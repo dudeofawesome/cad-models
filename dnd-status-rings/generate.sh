@@ -12,6 +12,7 @@ height="3"
 fillet_rad="1.25"
 ring_extruder="1"
 text_extruder="2"
+outer_wall_line_width="0.3"
 
 usage() {
     printf '%s\n' \
@@ -29,6 +30,8 @@ usage() {
         "                                (default: 1)" \
         "  --text-extruder INDEX         Extruder for the raised text" \
         "                                (default: 2)" \
+        "  --outer-wall-line-width MM    Override outer wall line width" \
+        "                                (default: 0.3)" \
         "  -h, --help                    Show this help"
 }
 
@@ -53,6 +56,11 @@ while [[ $# -gt 0 ]]; do
         --fillet-rad) require_value "$@"; fillet_rad="$2"; shift 2 ;;
         --ring-extruder) require_value "$@"; ring_extruder="$2"; shift 2 ;;
         --text-extruder) require_value "$@"; text_extruder="$2"; shift 2 ;;
+        --outer-wall-line-width)
+            require_value "$@"
+            outer_wall_line_width="$2"
+            shift 2
+            ;;
         -h|--help) usage; exit 0 ;;
         *)
             printf 'Unknown option: %s\n' "$1" >&2
@@ -74,6 +82,11 @@ fi
 
 if [[ ! "$text_extruder" =~ ^[0-9]+$ ]]; then
     printf 'Invalid text extruder: %s\n' "$text_extruder" >&2
+    exit 1
+fi
+
+if [[ ! "$outer_wall_line_width" =~ ^[0-9]+([.][0-9]+)?$ ]]; then
+    printf 'Invalid outer wall line width: %s\n' "$outer_wall_line_width" >&2
     exit 1
 fi
 
@@ -116,6 +129,15 @@ slugify() {
     printf '%s' "$value"
 }
 
+xml_attr_escape() {
+    local value="$1"
+    value="${value//&/&amp;}"
+    value="${value//\"/&quot;}"
+    value="${value//</&lt;}"
+    value="${value//>/&gt;}"
+    printf '%s' "$value"
+}
+
 render_ring() {
     local name="$1"
     local output="$2"
@@ -135,10 +157,12 @@ render_ring() {
 add_model_settings() {
     local package="$1"
     local package_dir tmp_dir model_file settings_file
-    local ring_object_id text_object_id
+    local model_name ring_object_id text_object_id assembly_object_id object_id
+    local escaped_model_name escaped_package
 
     package_dir="$(cd "$(dirname "$package")" && pwd)"
     package="$package_dir/$(basename "$package")"
+    model_name="${2:-$(basename "$package" .3mf)}"
 
     tmp_dir="$(mktemp -d "${TMPDIR:-/tmp}/status-ring-3mf.XXXXXX")"
     unzip -q "$package" -d "$tmp_dir"
@@ -166,34 +190,75 @@ add_model_settings() {
     ring_object_id="${build_object_ids[0]}"
     text_object_id="${build_object_ids[1]}"
 
+    assembly_object_id="0"
+    while IFS= read -r object_id; do
+        if [[ "$object_id" -gt "$assembly_object_id" ]]; then
+            assembly_object_id="$object_id"
+        fi
+    done < <(
+        perl -ne 'print "$1\n" if /<object\b[^>]*\bid="([0-9]+)"/' "$model_file"
+    )
+    assembly_object_id=$((assembly_object_id + 1))
+    escaped_model_name="$(xml_attr_escape "$model_name")"
+    escaped_package="$(xml_attr_escape "$package")"
+
+    ASSEMBLY_OBJECT_ID="$assembly_object_id" \
+    RING_OBJECT_ID="$ring_object_id" \
+    TEXT_OBJECT_ID="$text_object_id" \
+    MODEL_NAME="$escaped_model_name" \
+    perl -0pi -e '
+        my $assembly = qq{\t\t<object id="$ENV{ASSEMBLY_OBJECT_ID}" name="$ENV{MODEL_NAME}" type="model">\n}
+            . qq{\t\t\t<components>\n}
+            . qq{\t\t\t\t<component objectid="$ENV{RING_OBJECT_ID}"/>\n}
+            . qq{\t\t\t\t<component objectid="$ENV{TEXT_OBJECT_ID}"/>\n}
+            . qq{\t\t\t</components>\n}
+            . qq{\t\t</object>\n};
+        s{\t</resources>}{${assembly}\t</resources>}s;
+        s{<build([^>]*)>.*?</build>}{<build$1>\n\t\t<item objectid="$ENV{ASSEMBLY_OBJECT_ID}" partnumber="Part 1"/>\n\t</build>}s;
+    ' "$model_file"
+
     mkdir -p "$tmp_dir/Metadata"
     settings_file="$tmp_dir/Metadata/model_settings.config"
     cat > "$settings_file" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <config>
-  <object id="$ring_object_id">
-    <metadata key="name" value="ring"/>
-    <metadata key="extruder" value="$ring_extruder"/>
+  <object id="$assembly_object_id">
+    <metadata key="name" value="$escaped_model_name"/>
+    <metadata key="extruder" value="0"/>
+    <metadata key="outer_wall_line_width" value="$outer_wall_line_width"/>
+
+    <part id="$ring_object_id" subtype="normal_part">
+      <metadata key="name" value="ring"/>
+      <metadata key="source_file" value="$escaped_package"/>
+      <metadata key="source_object_id" value="0"/>
+      <metadata key="source_volume_id" value="0"/>
+      <metadata key="extruder" value="$ring_extruder"/>
+      <mesh_stat edges_fixed="0" degenerate_facets="0" facets_removed="0" facets_reversed="0" backwards_edges="0"/>
+    </part>
+    <part id="$text_object_id" subtype="normal_part">
+      <metadata key="name" value="text"/>
+      <metadata key="source_file" value="$escaped_package"/>
+      <metadata key="source_object_id" value="1"/>
+      <metadata key="source_volume_id" value="0"/>
+      <metadata key="extruder" value="$text_extruder"/>
+      <mesh_stat edges_fixed="0" degenerate_facets="0" facets_removed="0" facets_reversed="0" backwards_edges="0"/>
+    </part>
   </object>
-  <object id="$text_object_id">
-    <metadata key="name" value="text"/>
-    <metadata key="extruder" value="$text_extruder"/>
-  </object>
+
   <plate>
     <metadata key="plater_id" value="1"/>
     <metadata key="plater_name" value=""/>
     <metadata key="locked" value="false"/>
     <metadata key="filament_map_mode" value="Auto For Flush"/>
-    <metadata key="filament_maps" value="$ring_extruder $text_extruder"/>
+    <metadata key="filament_maps" value="1 1 1 1"/>
     <model_instance>
-      <metadata key="object_id" value="$ring_object_id"/>
+      <metadata key="object_id" value="$assembly_object_id"/>
       <metadata key="instance_id" value="0"/>
     </model_instance>
-    <model_instance>
-      <metadata key="object_id" value="$text_object_id"/>
-      <metadata key="instance_id" value="1"/>
-    </model_instance>
   </plate>
+  <assemble>
+   <assemble_item object_id="$assembly_object_id" instance_id="0" transform="1 0 0 0 1 0 0 0 1 0 0 0" offset="0 0 0" />
+  </assemble>
 </config>
 EOF
 
@@ -249,6 +314,6 @@ while IFS=, read -r name count extra || [[ -n "${name:-}" ]]; do
         fi
 
         render_ring "$name" "$output"
-        add_model_settings "$output"
+        add_model_settings "$output" "$name"
     done
 done < "$csv_file"
