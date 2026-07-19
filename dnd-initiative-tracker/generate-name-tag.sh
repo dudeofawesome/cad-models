@@ -4,7 +4,7 @@ set -euo pipefail
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 scad_file="$script_dir/name-tag.scad"
 
-name="Louis"
+names_file="$script_dir/names.csv"
 font="Herculanum"
 tag_length="50"
 tag_width="13.335"
@@ -20,7 +20,7 @@ text_margin="2"
 text_line_gap="1.0"
 show_back_initials="true"
 back_initials_size="7"
-back_initials_depth="0.35"
+back_initials_depth="0.5"
 back_initials_margin="1.5"
 corner_radius="0"
 pocket_corner_radius="0"
@@ -32,7 +32,7 @@ usage() {
         "Usage: $0 [options]" \
         "" \
         "Options:" \
-        "  --name VALUE                  Name to place on the tag" \
+        "  --names-file PATH             CSV containing a name column" \
         "  --font VALUE                  OpenSCAD font name (default: Herculanum)" \
         "  --tag-length MM               Tag length" \
         "  --tag-width MM                Tag width" \
@@ -66,7 +66,7 @@ require_value() {
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        --name) require_value "$@"; name="$2"; shift 2 ;;
+        --names-file) require_value "$@"; names_file="$2"; shift 2 ;;
         --font) require_value "$@"; font="$2"; shift 2 ;;
         --tag-length) require_value "$@"; tag_length="$2"; shift 2 ;;
         --tag-width) require_value "$@"; tag_width="$2"; shift 2 ;;
@@ -117,6 +117,47 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
+if [[ ! -f "$names_file" ]]; then
+    printf 'Names file not found: %s\n' "$names_file" >&2
+    exit 1
+fi
+
+if ! command -v python3 >/dev/null 2>&1; then
+    printf 'python3 is required to read %s.\n' "$names_file" >&2
+    exit 127
+fi
+
+names_list="$(mktemp "${TMPDIR:-/tmp}/name-tags.XXXXXX")"
+trap 'rm -f -- "$names_list"' EXIT
+
+python3 - "$names_file" > "$names_list" <<'PY'
+import csv
+import sys
+
+path = sys.argv[1]
+
+try:
+    with open(path, encoding="utf-8-sig", newline="") as names_file:
+        reader = csv.DictReader(names_file)
+        if reader.fieldnames is None or "name" not in reader.fieldnames:
+            raise SystemExit(f"{path}: expected a 'name' column")
+
+        count = 0
+        for row in reader:
+            name = (row.get("name") or "").strip()
+            if not name:
+                continue
+            if "\0" in name:
+                raise SystemExit(f"{path}: names cannot contain NUL characters")
+            sys.stdout.buffer.write(name.encode() + b"\0")
+            count += 1
+
+        if count == 0:
+            raise SystemExit(f"{path}: no names found")
+except (OSError, csv.Error) as error:
+    raise SystemExit(f"{path}: {error}") from error
+PY
+
 openscad_bin=""
 if command -v openscad >/dev/null 2>&1; then
     openscad_bin="openscad"
@@ -131,9 +172,6 @@ fi
 mkdir -p "$output_dir"
 export XDG_CACHE_HOME="${XDG_CACHE_HOME:-/private/tmp/name-tag-font-cache}"
 
-file_name="${name// /-}"
-file_name="${file_name//\//-}"
-
 scad_string() {
     local value="$1"
     value="${value//\\/\\\\}"
@@ -142,7 +180,6 @@ scad_string() {
 }
 
 defs=(
-    -D "person_name=$(scad_string "$name")"
     -D "font_name=$(scad_string "$font")"
     -D "tag_length=$tag_length"
     -D "tag_width=$tag_width"
@@ -167,26 +204,54 @@ defs=(
 render_part() {
     local part="$1"
     local output="$2"
+    local person_name="$3"
 
     "$openscad_bin" \
         --enable textmetrics \
         --enable lazy-union \
         -o "$output" \
+        -D "person_name=$(scad_string "$person_name")" \
         "${defs[@]}" \
         -D "part=\"$part\"" \
         "$scad_file"
 }
 
-if [[ "$split_colors" == "1" ]]; then
-    render_part "base" "$output_dir/$file_name-base.stl"
-    render_part "text" "$output_dir/$file_name-text.stl"
-    printf 'Wrote %s\n' "$output_dir/$file_name-base.stl"
-    printf 'Wrote %s\n' "$output_dir/$file_name-text.stl"
-    if [[ "$show_back_initials" == "true" ]]; then
-        render_part "initials" "$output_dir/$file_name-initials.stl"
-        printf 'Wrote %s\n' "$output_dir/$file_name-initials.stl"
+generate_model() {
+    local person_name="$1"
+    local file_name="${person_name// /-}"
+    file_name="${file_name//\//-}"
+
+    if [[ "$split_colors" == "1" ]]; then
+        render_part \
+            "base" \
+            "$output_dir/$file_name-base.stl" \
+            "$person_name"
+        render_part \
+            "text" \
+            "$output_dir/$file_name-text.stl" \
+            "$person_name"
+        printf 'Wrote %s\n' "$output_dir/$file_name-base.stl"
+        printf 'Wrote %s\n' "$output_dir/$file_name-text.stl"
+        if [[ "$show_back_initials" == "true" ]]; then
+            render_part \
+                "initials" \
+                "$output_dir/$file_name-initials.stl" \
+                "$person_name"
+            printf 'Wrote %s\n' "$output_dir/$file_name-initials.stl"
+        fi
+    else
+        render_part \
+            "all" \
+            "$output_dir/$file_name.3mf" \
+            "$person_name"
+        printf 'Wrote %s\n' "$output_dir/$file_name.3mf"
     fi
-else
-    render_part "all" "$output_dir/$file_name.3mf"
-    printf 'Wrote %s\n' "$output_dir/$file_name.3mf"
-fi
+}
+
+generated_count=0
+while IFS= read -r -d '' person_name; do
+    generate_model "$person_name"
+    generated_count=$((generated_count + 1))
+done < "$names_list"
+
+printf 'Generated %d model(s) from %s.\n' "$generated_count" "$names_file"
