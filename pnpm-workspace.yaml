@@ -1,0 +1,4 @@
+packages:
+  - dnd-status-rings
+allowBuilds:
+  puppeteer: true
