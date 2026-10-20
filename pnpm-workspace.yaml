@@ -1,4 +1,9 @@
 packages:
   - dnd-status-rings
+  - command-bin
+catalog:
+  typescript: ^7.0.2
 allowBuilds:
+  core-js: set this to true or false
   puppeteer: true
+  spawn-sync: set this to true or false

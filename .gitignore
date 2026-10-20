@@ -1,6 +1,7 @@
 # compiled output
 /result
 /result/
+output/
 
 # dependencies
 node_modules/
