@@ -8,3 +8,6 @@ allowBuilds:
   core-js: set this to true or false
   puppeteer: true
   spawn-sync: set this to true or false
+patchedDependencies:
+  # Match the models' Z-up coordinates in camera presets, orbit controls and grid.
+  brepjs-cad@0.44.0: patches/brepjs-cad@0.44.0.patch

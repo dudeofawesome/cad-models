@@ -10,6 +10,9 @@ catalogs:
       specifier: ^7.0.2
       version: 7.0.2
 
+patchedDependencies:
+  brepjs-cad@0.44.0: 80aa4d162fb316e98a40634103e30574813d6420adf3da4f89621a824a2abc6d
+
 importers:
 
   .:
@@ -32,7 +35,7 @@ importers:
         version: 26.1.0
       brepjs-cad:
         specifier: ^0.44.0
-        version: 0.44.0(zod@3.25.76)
+        version: 0.44.0(patch_hash=80aa4d162fb316e98a40634103e30574813d6420adf3da4f89621a824a2abc6d)(zod@3.25.76)
       brepjs-skills:
         specifier: github:andymai/brepjs#path:packages/brepjs-cad/skills
         version: https://codeload.github.com/andymai/brepjs/tar.gz/20a73d64c84fc90f1fd42490fd356d614e91c7bc#path:packages/brepjs-cad/skills
@@ -54,7 +57,7 @@ importers:
         version: 26.1.0
       brepjs-cad:
         specifier: ^0.44.0
-        version: 0.44.0(zod@3.25.76)
+        version: 0.44.0(patch_hash=80aa4d162fb316e98a40634103e30574813d6420adf3da4f89621a824a2abc6d)(zod@3.25.76)
 
   terracompute:
     dependencies:
@@ -70,7 +73,7 @@ importers:
         version: 26.1.0
       brepjs-cad:
         specifier: ^0.44.0
-        version: 0.44.0(zod@3.25.76)
+        version: 0.44.0(patch_hash=80aa4d162fb316e98a40634103e30574813d6420adf3da4f89621a824a2abc6d)(zod@3.25.76)
       brepjs-skills:
         specifier: github:andymai/brepjs#path:packages/brepjs-cad/skills
         version: https://codeload.github.com/andymai/brepjs/tar.gz/20a73d64c84fc90f1fd42490fd356d614e91c7bc#path:packages/brepjs-cad/skills
@@ -885,7 +888,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  brepjs-cad@0.44.0(zod@3.25.76):
+  brepjs-cad@0.44.0(patch_hash=80aa4d162fb316e98a40634103e30574813d6420adf3da4f89621a824a2abc6d)(zod@3.25.76):
     dependencies:
       '@modelcontextprotocol/sdk': 1.29.0(zod@3.25.76)
       brepjs: 18.118.3(occt-wasm@3.6.1)

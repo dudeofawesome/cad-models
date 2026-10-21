@@ -91,7 +91,9 @@ if (curves.length !== 40) {
 
 export function dockFootprint() {
   const remaining = curves.map((curve) => [...curve]);
-  const first = remaining.shift()!;
+  // Counterclockwise traversal keeps offsets on a consistent side of every
+  // span. Drawing.offset uses negative distances to expand this contour.
+  const first = remaining.shift()!.reverse();
   const start = first[0];
   const pen = draw(start);
   const append = (curve: Point2D[]) =>

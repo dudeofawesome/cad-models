@@ -7,6 +7,7 @@
   "type": "module",
   "scripts": {
     "dev:references": "brep bins/dji-mic-mini-tx-2x/references/layout.brep.ts --serve --no-open",
+    "dev:assembly": "brep bins/dji-mic-mini-tx-2x/assembly.brep.ts --serve --no-open",
     "verify:references": "brep verify \"bins/dji-mic-mini-tx-2x/references/*.brep.ts\"",
     "dev": "brep bins/dji-mic-mini-tx-2x/bin.brep.ts --serve --no-open",
     "check": "tsc --noEmit",
