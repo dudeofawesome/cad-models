@@ -1,6 +1,7 @@
 packages:
   - dnd-status-rings
   - command-bin
+  - terracompute
 catalog:
   typescript: ^7.0.2
 allowBuilds:

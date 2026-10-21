@@ -1,0 +1,27 @@
+{
+  "name": "terracompute",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Terracompute server hardware",
+  "license": "CERN-OHL-W-2.0",
+  "type": "module",
+  "scripts": {
+    "dev:references": "brep bins/dji-mic-mini-tx-2x/references/layout.brep.ts --serve --no-open",
+    "dev:assembly": "brep bins/dji-mic-mini-tx-2x/assembly.brep.ts --serve --no-open",
+    "verify:references": "brep verify \"bins/dji-mic-mini-tx-2x/references/*.brep.ts\"",
+    "dev": "brep bins/dji-mic-mini-tx-2x/bin.brep.ts --serve --no-open",
+    "check": "tsc --noEmit",
+    "verify": "brep verify bins/dji-mic-mini-tx-2x/bin.brep.ts",
+    "build": "mkdir -p bins/dji-mic-mini-tx-2x/output && brep verify bins/dji-mic-mini-tx-2x/bin.brep.ts --step bins/dji-mic-mini-tx-2x/output/bin.step"
+  },
+  "dependencies": {
+    "brepjs": "^18.118.3",
+    "occt-wasm": "^3.6.1"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.0",
+    "brepjs-cad": "^0.44.0",
+    "brepjs-skills": "github:andymai/brepjs#path:packages/brepjs-cad/skills",
+    "typescript": "catalog:"
+  }
+}

@@ -56,6 +56,28 @@ importers:
         specifier: ^0.44.0
         version: 0.44.0(zod@3.25.76)
 
+  terracompute:
+    dependencies:
+      brepjs:
+        specifier: ^18.118.3
+        version: 18.118.3(occt-wasm@3.6.1)
+      occt-wasm:
+        specifier: ^3.6.1
+        version: 3.6.1
+    devDependencies:
+      '@types/node':
+        specifier: ^26.1.0
+        version: 26.1.0
+      brepjs-cad:
+        specifier: ^0.44.0
+        version: 0.44.0(zod@3.25.76)
+      brepjs-skills:
+        specifier: github:andymai/brepjs#path:packages/brepjs-cad/skills
+        version: https://codeload.github.com/andymai/brepjs/tar.gz/20a73d64c84fc90f1fd42490fd356d614e91c7bc#path:packages/brepjs-cad/skills
+      typescript:
+        specifier: 'catalog:'
+        version: 7.0.2
+
 packages:
 
   '@hono/node-server@1.19.14':
