@@ -19,8 +19,11 @@ export const parameters = {
   dockClearance: 0.3, // per side; tune with a fit print
   magnetDiameter: 6.5, // glue pockets for nominal 6 × 2 mm magnets
   magnetDepth: 2.4,
-  cableChannelWidth: 6,
-  cableChannelDepth: 5,
+  cableDiameter: 3.2,
+  cablesPerChannel: 2, // vertically stacked seats at both top edges
+  cableInterference: 0.1, // diametral squeeze; tune for the cable jacket
+  cableSlotWidth: 2.6, // narrow top opening retains the pressed-in cable
+  cableChannelRoof: 0.8,
   cableChannelEdgeWall: 1.5,
   usbAccessWidth: 14,
 };
@@ -72,7 +75,26 @@ export default function bin() {
   if (dockSeatHeight < baseHeight + 1.2 || p.dockPocketDepth <= 0) {
     throw new Error("Dock pockets must leave at least 1.2 mm above the feet");
   }
-  if (p.height - p.cableChannelDepth < baseHeight + 1.2) {
+  const channelDiameter = p.cableDiameter - p.cableInterference;
+  const channelRadius = channelDiameter / 2;
+  const channelZ = p.height - p.cableChannelRoof - channelRadius;
+  // Nominal cable diameter sets pitch so the jackets do not overlap.
+  const lowestChannelZ = channelZ - (p.cablesPerChannel - 1) * p.cableDiameter;
+  if (
+    !Number.isInteger(p.cablesPerChannel) ||
+    p.cablesPerChannel < 2 ||
+    channelDiameter <= 0 ||
+    p.cableInterference < 0 ||
+    p.cableSlotWidth <= 0 ||
+    p.cableSlotWidth >= channelDiameter ||
+    p.cableChannelRoof <= 0 ||
+    p.cableChannelEdgeWall < 1.2
+  ) {
+    throw new Error(
+      "Cable channels need at least two seats, a narrower slot, positive roof and at least 1.2 mm outer wall",
+    );
+  }
+  if (lowestChannelZ - channelRadius < baseHeight + 1.2) {
     throw new Error("Cable channels must leave at least 1.2 mm above the feet");
   }
 
@@ -103,18 +125,33 @@ export default function bin() {
     body = unwrap(cut(body, access));
   }
 
-  // Open-top front/rear raceways pass entirely through both X ends,
-  // so cables from neighboring bins can be laid in without threading.
+  // Top-front and top-back channels each have vertically stacked round
+  // seats gripping nominal 3.2 mm jackets. A continuous narrower slot lets
+  // the first cable be pressed through to the lower seat, then the next
+  // into the upper seat, without threading connectors through the ends.
+  // Rear USB access interrupts the upper retaining lips at the dock ports.
   const channelY =
-    depth / 2 - p.cableChannelEdgeWall - p.cableChannelWidth / 2;
+    depth / 2 - p.cableChannelEdgeWall - channelRadius;
   for (const side of [-1, 1]) {
-    const channel = box(
+    for (let seat = 0; seat < p.cablesPerChannel; seat += 1) {
+      const channel = cylinder(channelRadius, width + 2, {
+        at: [
+          -width / 2 - 1,
+          side * channelY,
+          channelZ - seat * p.cableDiameter,
+        ],
+        axis: [1, 0, 0],
+      });
+      body = unwrap(cut(body, channel));
+    }
+    const slotHeight = p.height - lowestChannelZ + overlap;
+    const slot = box(
       width + 2,
-      p.cableChannelWidth,
-      p.cableChannelDepth + overlap,
-      { at: [0, side * channelY, p.height - p.cableChannelDepth / 2 + overlap / 2] },
+      p.cableSlotWidth,
+      slotHeight,
+      { at: [0, side * channelY, lowestChannelZ + slotHeight / 2] },
     );
-    body = unwrap(cut(body, channel));
+    body = unwrap(cut(body, slot));
   }
 
   // Four underside magnet pockets per foot, on a 26 × 26 mm square.

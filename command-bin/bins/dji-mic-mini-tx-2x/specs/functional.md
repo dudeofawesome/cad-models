@@ -8,4 +8,4 @@
 
 ## Compatibility
 
-- should include USB cable-routing channels along the sides for the cables from other bins
+- should include friction-fit USB cable-routing channels along the top front and top back for the cables from other bins. consider a nominal cable diameter to be 3.2mm. make the channels deep enough to hold at least 2 cables.
