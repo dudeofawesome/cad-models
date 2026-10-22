@@ -41,7 +41,7 @@ Floors, the PSU shelf, and bracket rails are placeholders, not designed structur
 
 ## Viewing every model
 
-`pnpm --filter terracompute export` writes a STEP file for every reference part and layout view to `gpu-shelf/output/` (not committed). With the viewer running (`pnpm --filter terracompute dev:layout`), open any of them at:
+`pnpm --filter terracompute export` writes a STEP file for every reference part and layout view to `gpu-shelf/output/` (not committed) and prints a viewer link for each. With the viewer running (`pnpm --filter terracompute dev:layout`), the links follow this pattern:
 
 ```
 http://127.0.0.1:7373/?dir=<absolute path to gpu-shelf/output, URL-encoded>&file=<name>.step
