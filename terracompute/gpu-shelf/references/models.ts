@@ -13,3 +13,4 @@ export * from "./models/gpu.ts";
 export * from "./models/device-adapter.ts";
 export * from "./models/psu.ts";
 export * from "./models/drives.ts";
+export * from "./models/fan.ts";

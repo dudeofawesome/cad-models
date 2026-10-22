@@ -24,5 +24,5 @@ export function u2DriveBody(drive: U2Drive) {
 }
 
 export function u2DriveKeepouts(drive: U2Drive) {
-  return block([0, drive.width], [drive.length, drive.length + u2CableDepth], [0, drive.height]);
+  return compound([block([0, drive.width], [drive.length, drive.length + u2CableDepth], [0, drive.height])]);
 }

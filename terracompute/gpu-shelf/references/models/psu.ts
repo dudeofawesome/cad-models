@@ -136,5 +136,5 @@ export function atxPsuBody() {
 
 export function atxPsuKeepouts() {
   const a = atxPsu;
-  return block([0, a.width], [a.length, a.length + a.cableDepth], [0, a.height]);
+  return compound([block([0, a.width], [a.length, a.length + a.cableDepth], [0, a.height])]);
 }

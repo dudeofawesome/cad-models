@@ -6,6 +6,8 @@
 - motherboard I/O must remain accessible from the front of the rack: the rear-I/O edge (Ethernet, IPMI, USB, VGA, power / reset / locator buttons) faces front, like the networking gear in the same cabinet
 - normal operation requires only external Ethernet and power connections
 - GPUs operate headlessly; external access to their video outputs is not required
+- device adapters and breakout boards may be replaced (GPUs dropping off the bus is under investigation, and these are suspects): each must come out without removing other GPUs or unbolting structure
+  - GPUs should be fixed only by their brackets, with adapters held in place by the card rather than screwed down
 
 ### Components
 

@@ -117,5 +117,5 @@ export function gpuBody(card: GpuCard) {
 }
 
 export function gpuKeepouts(card: GpuCard) {
-  return block([0, card.length], [0, card.thickness], [card.height, card.height + gpu.powerKeepout]);
+  return compound([block([0, card.length], [0, card.thickness], [card.height, card.height + gpu.powerKeepout])]);
 }

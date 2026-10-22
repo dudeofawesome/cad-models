@@ -4,6 +4,7 @@
 
 - aluminum bar / angle with rivets is a starting suggestion, not a requirement; other construction (e.g. T-slot extrusion, off-the-shelf rack shelves, bolts) is acceptable if it fits the budget
 - tool availability does not constrain the design unless a tool is expensive to buy or rent
+- an open skeleton frame (no outer walls) is being considered; any walls or ducts it needs for airflow should be easy to remove for service
 
 ## Rack
 

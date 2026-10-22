@@ -7,7 +7,9 @@
   "type": "module",
   "scripts": {
     "dev:references": "brep gpu-shelf/references/motherboard.brep.ts --serve --no-open",
+    "dev:layout": "brep gpu-shelf/layout/stacked-tiers.brep.ts --serve --no-open",
     "verify:references": "brep verify \"gpu-shelf/references/*.brep.ts\"",
+    "verify:layout": "brep verify \"gpu-shelf/layout/*.brep.ts\"",
     "check": "tsc --noEmit"
   },
   "dependencies": {
