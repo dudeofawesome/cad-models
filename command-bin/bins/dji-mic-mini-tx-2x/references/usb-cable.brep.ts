@@ -1,3 +1,5 @@
+#!/usr/bin/env brep --serve --no-open
+
 import { dimensions, usbCableEnvelope } from "./models.ts";
 
 const p = dimensions.usbPlug;

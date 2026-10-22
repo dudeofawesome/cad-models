@@ -1,3 +1,5 @@
+#!/usr/bin/env brep --serve --no-open
+
 import { dimensions, dockEnvelope } from "./models.ts";
 
 const p = dimensions.dock;

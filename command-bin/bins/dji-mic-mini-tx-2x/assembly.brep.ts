@@ -1,3 +1,5 @@
+#!/usr/bin/env brep --serve --no-open
+
 import { compound, translate } from "brepjs";
 import bin, { dockCenters, dockSeatHeight } from "./bin.brep.ts";
 import {
