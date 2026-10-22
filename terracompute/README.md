@@ -18,4 +18,5 @@ Open the URL printed by the preview server to view the motherboard reference mod
 pnpm --filter terracompute check
 pnpm --filter terracompute verify:references
 pnpm --filter terracompute verify:layout
+pnpm --filter terracompute export
 ```

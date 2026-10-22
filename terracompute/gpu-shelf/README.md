@@ -30,10 +30,21 @@ Both options share these choices:
 - **GPUs stand on their slot edges** with their lengths running front to back and brackets at the rear. Only the brackets are fixed, to a rail behind them; each SlimSAS adapter rests under its card on standoffs, so adapters can be swapped by lifting the card. The adapters' cables leave toward the rear and drop straight down to the motherboard's SlimSAS connectors.
 - Cards are spaced so each adapter's cables clear the next card, which leaves 36–43 mm between cards for their fans to draw air.
 
-| File | Arrangement | Height |
+| Option | Arrangement | Height |
 |---|---|---|
-| `stacked-tiers.brep.ts` | two GPU tiers of four (Founders Edition cards in one, partner cards in the other), each with its own fresh air | 14U |
-| `two-rows.brep.ts` | one GPU tier with a front and a rear row; the rear row breathes air the front row has heated | 9U |
+| A, `stacked-tiers` | two GPU tiers of four (Founders Edition cards in one, partner cards in the other), each with its own fresh air | 14U |
+| B, `two-rows` | one GPU tier with a front and a rear row; the rear row breathes air the front row has heated | 9U |
 
-Floors, the PSU shelf, and bracket rails are placeholders, not designed structure. Each layout throws if any part's body runs into another part's body or keepout. Set `showKeepouts: true` to see reserved cable space, and `ducts: true` to add thin side sheets (and a top) that turn each GPU tier into a front-to-back duct.
+Both options are defined in `options.ts`. Each has three view files: `<option>.brep.ts` (plain), `<option>.ducts.brep.ts` (thin side sheets and a top turn each GPU tier into a front-to-back duct), and `<option>.keepouts.brep.ts` (reserved cable space shown).
 
+Floors, the PSU shelf, and bracket rails are placeholders, not designed structure. Each layout throws if any part's body runs into another part's body or keepout.
+
+## Viewing every model
+
+`pnpm --filter terracompute export` writes a STEP file for every reference part and layout view to `gpu-shelf/output/` (not committed). With the viewer running (`pnpm --filter terracompute dev:layout`), open any of them at:
+
+```
+http://127.0.0.1:7373/?dir=<absolute path to gpu-shelf/output, URL-encoded>&file=<name>.step
+```
+
+where `<name>` is the `.brep.ts` file name without `.brep.ts`, e.g. `stacked-tiers.ducts`. Re-run the export after changing a model.

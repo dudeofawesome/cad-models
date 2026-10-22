@@ -10,7 +10,8 @@
     "dev:layout": "brep gpu-shelf/layout/stacked-tiers.brep.ts --serve --no-open",
     "verify:references": "brep verify \"gpu-shelf/references/*.brep.ts\"",
     "verify:layout": "brep verify \"gpu-shelf/layout/*.brep.ts\"",
-    "check": "tsc --noEmit"
+    "check": "tsc --noEmit",
+    "export": "mkdir -p gpu-shelf/output && for f in gpu-shelf/references/*.brep.ts gpu-shelf/layout/*.brep.ts; do brep verify \"$f\" --step \"gpu-shelf/output/$(basename \"$f\" .brep.ts).step\" > /dev/null || { echo \"failed: $f\"; exit 1; }; done"
   },
   "dependencies": {
     "brepjs": "^18.118.3",
