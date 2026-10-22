@@ -13,7 +13,7 @@ import {
   rails,
   type Placed,
 } from "./placement.ts";
-import { assertCablesReach, cable, type CableRow } from "./cables.ts";
+import { assertCablesReach, cable, currentWiring, type CableRow } from "./cables.ts";
 
 // The layout options. Each `.brep.ts` file in this folder shows one of
 // them with a given view: plain, with GPU tier ducts, or with keepouts.
@@ -22,7 +22,9 @@ export type View = { ducts?: boolean; keepouts?: boolean };
 
 const { founders, asusTuf, gigabyteAero, gigabyteWindforce, msiGamingX } = gpuCards;
 const fe = [founders, founders, founders, founders];
-const partners = [gigabyteWindforce, asusTuf, gigabyteAero, msiGamingX];
+// Left to right in this order, each card sits near the motherboard pair it
+// is cabled to today (see currentWiring in cables.ts), so no re-cabling.
+const partners = [gigabyteWindforce, msiGamingX, gigabyteAero, asusTuf];
 const tallest = (cards: GpuCard[]) => Math.max(...cards.map((c) => c.height));
 
 /** Expected bounds: the rack rails, plus the front I/O cable space when keepouts show. */
@@ -74,7 +76,7 @@ export function stackedTiersCables(): CableRow[] {
 }
 
 export function stackedTiersLayout(view: View) {
-  assertCablesReach(stackedTiersCables(), stackedTierZ[0]);
+  assertCablesReach(stackedTiersCables(), stackedTierZ[0], currentWiring);
   return assemble(
     [
       rails(stackedHeight),
@@ -119,7 +121,7 @@ export function twoRowsCables(): CableRow[] {
 export function twoRowsLayout(view: View) {
   const z0 = motherboardTier.height;
   const floorTop = twoRowsFloorTop;
-  assertCablesReach(twoRowsCables(), 0);
+  assertCablesReach(twoRowsCables(), 0, currentWiring);
   return assemble(
     [
       rails(twoRowsHeight),

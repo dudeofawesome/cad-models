@@ -32,6 +32,8 @@ Board frame used below: looking down at the component side with the rear-I/O (Et
     - 8 side-entry along the back edge, Y 333–351, cables plugging in from behind: X 77.5–102.4, 107.3–132, 133.7–158.4, 163.3–187.7, 302.3–326, 331–355.1, 356.6–380.5, 386–409.3
     - 11 vertical-entry, ~11.5 × 28.5, cables plugging in from above: 4 at X 14.8–68 and 4 at X 239.9–295.3 (both Y 313–342), plus 3 near the front: X 52.6–64.2 and 67–79.1 (Y 79–110), X 340.9–352 (Y 81–109)
     - these are ~8 to the right of where the manual's drawing puts them; the photo is the better source
+    - names, left to right: back edge SLIM7_1, 7_2, 6_1, 6_2, 2_1, 2_2, 1_1, 1_2; back vertical SLIM9_1, 9_2, 8_1, 8_2 and SLIM4_1, 4_2, 3_1, 3_2; front vertical SLIM10_1, 10_2 and SLIM5_1 (manual drawing)
+  - GPU cabling at build time (setup spreadsheet): each card uses one _1/_2 pair. ASUS TUF SLIM1; Aero SLIM4; MSI SLIM7; Windforce SLIM9; the four Founders Edition cards SLIM2, 3, 6, 8. SLIM1–4 are on one CPU socket (PCI buses 01–61), SLIM6–9 on the other (81–e1). SLIM10 and SLIM5 are unused by GPUs
   - 24-pin ATX and one 8-pin: left edge, Y 36–108. Second 8-pin: right edge, Y 91–109
 - 19x SlimSAS SFF-8654 x8 (PCIe 4.0), no PCIe slots, 1x M.2
 - power in: 1x 24-pin ATX, 2x 8-pin 12 V

@@ -40,29 +40,49 @@ export type CableRow = {
 type Point = { x: number; y: number; z: number };
 
 // Motherboard SlimSAS connectors in rack coordinates, grouped into the
-// _1/_2 pairs that make one x16 link: adjacent connectors. The lone
-// vertical connector (SLIM5) is left for the U.2 drives.
-function boardConnectorPairs(z0: number): { name: string; ends: [Point, Point] }[] {
+// _1/_2 pairs that make one x16 link (SLIM5 has only _1 and is left for
+// the U.2 drives).
+type Pair = { name: string; ends: [Point, Point] };
+function boardConnectorPairs(z0: number): Pair[] {
   const [ox, oy, oz] = boardOrigin(z0);
   const top = oz + motherboard.pcbThickness;
   const mid = (r: readonly [number, number]) => (r[0] + r[1]) / 2;
+  const connectors = new Map<string, Point>();
   // Side-entry connectors take the cable from behind the board's back edge.
-  const edge = motherboard.slimsasEdge.map((x) => ({
-    x: ox + mid(x),
-    y: oy + motherboard.depth,
-    z: top + motherboard.slimsasEdgeHeight / 2,
-  }));
+  motherboard.slimsasEdge.forEach((x, i) =>
+    connectors.set(motherboard.slimsasEdgeNames[i], {
+      x: ox + mid(x),
+      y: oy + motherboard.depth,
+      z: top + motherboard.slimsasEdgeHeight / 2,
+    }),
+  );
   // Vertical connectors take the cable from above.
-  const vertical = motherboard.slimsasVertical.map(({ x, y }) => ({
-    x: ox + mid(x),
-    y: oy + mid(y),
-    z: top + motherboard.slimsasVerticalHeight,
+  motherboard.slimsasVertical.forEach(({ x, y }, i) =>
+    connectors.set(motherboard.slimsasVerticalNames[i], {
+      x: ox + mid(x),
+      y: oy + mid(y),
+      z: top + motherboard.slimsasVerticalHeight,
+    }),
+  );
+  return [1, 2, 3, 4, 6, 7, 8, 9, 10].map((n) => ({
+    name: `SLIM${n}`,
+    ends: [connectors.get(`SLIM${n}_1`)!, connectors.get(`SLIM${n}_2`)!],
   }));
-  const pairs: { name: string; ends: [Point, Point] }[] = [];
-  for (let i = 0; i < edge.length; i += 2) pairs.push({ name: `edge ${i / 2 + 1}`, ends: [edge[i], edge[i + 1]] });
-  for (let i = 0; i < 10; i += 2) pairs.push({ name: `vertical ${i / 2 + 1}`, ends: [vertical[i], vertical[i + 1]] });
-  return pairs;
 }
+
+/**
+ * How the GPUs were cabled when the machine was built, from the setup
+ * spreadsheet. Each card model lists the pairs its cards use; the four
+ * Founders Edition cards share four pairs. SLIM1–4 hang off one CPU
+ * socket, SLIM6–9 off the other (PCI buses 01–61 vs 81–e1).
+ */
+export const currentWiring: Record<string, string[]> = {
+  "ASUS TUF RTX 4090 OC": ["SLIM1"],
+  "Gigabyte RTX 4090 Aero OC": ["SLIM4"],
+  "MSI RTX 4090 Gaming X Trio": ["SLIM7"],
+  "Gigabyte RTX 4090 Windforce V2": ["SLIM9"],
+  "Nvidia RTX 4090 FE": ["SLIM2", "SLIM3", "SLIM6", "SLIM8"],
+};
 
 // The adapter's two SlimSAS connectors for a card, in rack coordinates,
 // at the face the cable leaves from. Mirrors the card placement in gpuRow.
@@ -91,9 +111,10 @@ export type CableAssignment = { card: string; row: string; pair: string; routes:
 
 /**
  * Assign each card a motherboard connector pair so the longest route is as
- * short as possible, and report every route.
+ * short as possible, and report every route. `allowed` limits which pairs
+ * each card model may use (e.g. `currentWiring`).
  */
-export function planCables(rows: CableRow[], motherboardZ0: number) {
+export function planCables(rows: CableRow[], motherboardZ0: number, allowed?: Record<string, string[]>) {
   const pairs = boardConnectorPairs(motherboardZ0);
   const cards = rows.flatMap((row) =>
     rowPositions(row.cards, row.label).map((x0, i) => ({
@@ -123,6 +144,7 @@ export function planCables(rows: CableRow[], motherboardZ0: number) {
     }
     for (let j = 0; j < pairs.length; j++) {
       if (used.has(j)) continue;
+      if (allowed && !allowed[cards[i].name]?.includes(pairs[j].name)) continue;
       used.add(j);
       choice.push(j);
       search(i + 1, Math.max(worst, ...cost[i][j]));
@@ -142,8 +164,8 @@ export function planCables(rows: CableRow[], motherboardZ0: number) {
 }
 
 /** Throw if any card's cables cannot reach the motherboard. */
-export function assertCablesReach(rows: CableRow[], motherboardZ0: number) {
-  const plan = planCables(rows, motherboardZ0);
+export function assertCablesReach(rows: CableRow[], motherboardZ0: number, allowed?: Record<string, string[]>) {
+  const plan = planCables(rows, motherboardZ0, allowed);
   if (plan.longest > plan.maxRoute) {
     const lines = plan.assignments.map((a) => `${a.row} ${a.card} → ${a.pair}: ${a.routes.map((r) => r.toFixed(0)).join(", ")} mm`);
     throw new Error(

@@ -60,6 +60,8 @@ export const motherboard = {
   // connector highlighted by the user (2026-10-21), mapped to board
   // coordinates through the mounting holes (±3).
   // Side-entry SlimSAS along the back edge; cables plug in from behind.
+  // Names, left to right, from the manual's layout drawing.
+  slimsasEdgeNames: ["SLIM7_1", "SLIM7_2", "SLIM6_1", "SLIM6_2", "SLIM2_1", "SLIM2_2", "SLIM1_1", "SLIM1_2"],
   slimsasEdge: [
     [77.5, 102.4],
     [107.3, 132],
@@ -74,7 +76,13 @@ export const motherboard = {
   slimsasEdgeHeight: 9, // assumed
   slimsasCableDepth: 50, // behind the back edge: plug plus 1" bend radius
   slimsasCableHeight: 25,
-  // Vertical-entry SlimSAS; cables plug in from above.
+  // Vertical-entry SlimSAS; cables plug in from above. Names, in list
+  // order, from the manual's layout drawing.
+  slimsasVerticalNames: [
+    "SLIM9_1", "SLIM9_2", "SLIM8_1", "SLIM8_2",
+    "SLIM4_1", "SLIM4_2", "SLIM3_1", "SLIM3_2",
+    "SLIM10_1", "SLIM10_2", "SLIM5_1",
+  ],
   slimsasVertical: [
     { x: [14.8, 26.5], y: [313, 342] },
     { x: [27.8, 39.5], y: [313, 342] },

@@ -39,7 +39,7 @@ Both options are defined in `options.ts`. Each has three view files: `<option>.b
 
 Floors, the PSU shelf, and bracket rails are placeholders, not designed structure. Each layout throws if any part's body runs into another part's body or keepout.
 
-Each layout also checks that the SlimSAS cables reach (`layout/cables.ts`). It estimates every route as straight runs along the rack's axes: out of the adapter toward the rear, down through a gap between the motherboard and the PSUs, then to a motherboard connector. It adds 10% for slack and bends, and assigns each card the connector pair that keeps the longest route shortest. `pnpm --filter terracompute cables` prints the routes. With 1 m cables, option A's longest route is ~640 mm (~250 mm spare); option B's rear row reaches ~820 mm (~50 mm spare), since those cables have to run forward over the PSUs.
+Each layout also checks that the SlimSAS cables reach (`layout/cables.ts`). It estimates every route as straight runs along the rack's axes: out of the adapter toward the rear, down through a gap between the motherboard and the PSUs, then to a motherboard connector. It adds 10% for slack and bends, and requires each GPU to stay on the connector pair it is cabled to today (`currentWiring`, from the setup spreadsheet). The partner cards are ordered left to right so each sits near its pair. `pnpm --filter terracompute cables` prints every route, both as cabled today and with the best possible pairs. With 1 m cables, option A's longest route is ~645 mm (~240 mm spare); option B's rear row reaches ~830 mm (~40 mm spare), since those cables have to run forward over the PSUs.
 
 ## Viewing every model
 
