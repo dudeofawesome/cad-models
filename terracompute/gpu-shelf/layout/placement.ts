@@ -32,7 +32,7 @@ import {
   type GpuCard,
   type Range,
 } from "../references/models.ts";
-import { intakeShroud, intakeWidth } from "./shrouds.ts";
+import { divider, intakeShroud, intakeWidth } from "./shrouds.ts";
 
 // Rack frame used by every layout. Units: mm.
 // X: across the rack, 0 on the centerline. Y: from the front rail plane
@@ -246,36 +246,57 @@ export function rowPositions(cards: GpuCard[], label: string): { x0: number[]; f
  * are fixed, to a rail behind them. Spare width is shared evenly between
  * the cards.
  */
+export type RowAirflow = {
+  /** Add an intake shroud to each card, with its inlet at this rack Y. */
+  shroudInletY?: number;
+  /** Add a divider between each pair of cards, starting at this rack Y. */
+  dividerFrontY?: number;
+};
+
 export function gpuRow(
   cards: GpuCard[],
   floorTop: number,
   bracketY: number,
   label: string,
-  /** Add intake shrouds whose inlets open at this rack Y. */
-  shroudInletY?: number,
+  airflow: RowAirflow = {},
 ): Placed[] {
   const z = floorTop + cardLift;
   const { x0: positions, fanSpace } = rowPositions(cards, label);
   // Card frame → rack: turn −90° so the card's length runs toward −Y from
   // the bracket and its thickness toward +X.
-  const units = positions.map((x0, i) => place(gpuUnit(cards[i]), -90, [x0, bracketY, z]));
+  const toRack = (item: Placed, x0: number) => place(item, -90, [x0, bracketY, z]);
+  const units = positions.map((x0, i) => toRack(gpuUnit(cards[i]), x0));
+  const { shroudInletY, dividerFrontY } = airflow;
   const shrouds =
     shroudInletY === undefined
       ? []
       : positions.map((x0, i) =>
-          place(
+          toRack(
             {
               name: `${cards[i].name} intake shroud`,
               body: intakeShroud(cards[i], intakeWidth(fanSpace), bracketY - shroudInletY),
             },
-            -90,
-            [x0, bracketY, z],
+            x0,
+          ),
+        );
+  // Only between cards: the last card's fan side faces the side wall.
+  const dividers =
+    dividerFrontY === undefined
+      ? []
+      : positions.slice(0, -1).map((x0, i) =>
+          toRack(
+            {
+              name: `${label} divider ${i + 1}`,
+              body: divider(cards[i], fanSpace, bracketY - dividerFrontY, Math.max(cards[i].height, cards[i + 1].height)),
+            },
+            x0,
           ),
         );
   const railTop = z + gpu.bracket.z[1];
   return [
     ...units,
     ...shrouds,
+    ...dividers,
     {
       name: `${label} bracket rail`,
       body: compound([

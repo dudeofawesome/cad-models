@@ -35,14 +35,21 @@ Both options share these choices:
 |---|---|---|
 | A, `stacked-tiers` | two GPU tiers of four (Founders Edition cards in one, partner cards in the other), each with its own fresh air | 14U |
 | B, `two-rows` | one GPU tier with a front and a rear row; the rear row breathes air the front row has heated | 9U |
+| C, `three-per-tier` | three GPU tiers of three, three, and two cards, giving each card 60–150 mm beside its fans; the motherboard tier sits second from the bottom so no cable climbs more than two tiers | 19U |
 
-Both options are defined in `options.ts`. Each has four view files: `<option>.brep.ts` (plain), `<option>.ducts.brep.ts` (thin side sheets and a top turn each GPU tier into a front-to-back duct), `<option>.shrouds.brep.ts` (a 3D-printed intake shroud on each GPU's fan side, see `shrouds.ts`), and `<option>.keepouts.brep.ts` (reserved cable space shown).
+The options are defined in `options.ts`. Each has five view files:
 
-The intake shrouds fit, but in these layouts their channels are only ~18 mm (partner cards) and ~27 mm (Founders Edition) wide: under a tenth of the fans' opening area, too narrow to feed the fans well. Wider spacing between cards is needed before shrouds are worthwhile.
+- `<option>.brep.ts`: plain
+- `<option>.ducts.brep.ts`: thin side sheets and a top turn each GPU tier into a front-to-back duct
+- `<option>.shrouds.brep.ts`: a 3D-printed intake shroud on each GPU's fan side (`shrouds.ts`), open at the front through a flared inlet, leaving the next card's backplate an exhaust channel
+- `<option>.dividers.brep.ts`: the simpler alternative, a flat sheet between each pair of cards splitting the space into an intake channel open to the front and an exhaust channel along the next card's backplate, closed at the front
+- `<option>.keepouts.brep.ts`: reserved cable space shown
+
+Shroud intake channels are ~18 mm (partner cards) and ~26 mm (Founders Edition) wide in options A and B, under a tenth of the fans' opening area and too narrow to feed the fans well. Option C's wider spacing gives 39–60 mm channels.
 
 Floors, the PSU shelf, and bracket rails are placeholders, not designed structure. Each layout throws if any part's body runs into another part's body or keepout.
 
-Each layout also checks that the SlimSAS cables reach (`layout/cables.ts`). It estimates every route as straight runs along the rack's axes: out of the adapter toward the rear, down through a gap between the motherboard and the PSUs, then to a motherboard connector. It adds 10% for slack and bends, and assigns each GPU the connector pair that keeps the longest route shortest; which GPU sits on which pair doesn't matter to the machine. `pnpm --filter terracompute cables` prints every route, both with the best pairs and as cabled at build time (`currentWiring`, from the setup spreadsheet). With 1 m cables, option A's longest route is ~630 mm (~260 mm spare); option B's rear row reaches ~810 mm (~60 mm spare), since those cables have to run forward over the PSUs.
+Each layout also checks that the SlimSAS cables reach (`layout/cables.ts`). It estimates every route as straight runs along the rack's axes: out of the adapter toward the rear, down through a gap between the motherboard and the PSUs, then to a motherboard connector. It adds 10% for slack and bends, and assigns each GPU the connector pair that keeps the longest route shortest; which GPU sits on which pair doesn't matter to the machine. `pnpm --filter terracompute cables` prints every route, both with the best pairs and as cabled at build time (`currentWiring`, from the setup spreadsheet). With 1 m cables, option A's longest route is ~650 mm (~235 mm spare) and option C's ~640 mm (~250 mm spare); option B's rear row reaches ~830 mm (~35 mm spare), since those cables have to run forward over the PSUs.
 
 ## Viewing every model
 

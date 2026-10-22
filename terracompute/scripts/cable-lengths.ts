@@ -2,19 +2,22 @@
 // with the best connector choice and with the GPUs cabled as they are today.
 // Run: node scripts/cable-lengths.ts (from terracompute/)
 import { cable, currentWiring, planCables } from "../gpu-shelf/layout/cables.ts";
-import { stackedTiersCables, twoRowsCables } from "../gpu-shelf/layout/options.ts";
+import { gpuTier } from "../gpu-shelf/layout/placement.ts";
+import { stackedTiersCables, threePerTierCables, twoRowsCables } from "../gpu-shelf/layout/options.ts";
 
 const options = [
-  { name: "A, stacked tiers", rows: stackedTiersCables() },
-  { name: "B, two rows", rows: twoRowsCables() },
+  { name: "A, stacked tiers", rows: stackedTiersCables(), motherboardZ: 0 },
+  { name: "B, two rows", rows: twoRowsCables(), motherboardZ: 0 },
+  // Option C's motherboard tier sits on top of one GPU tier.
+  { name: "C, three cards per tier", rows: threePerTierCables(), motherboardZ: gpuTier.height },
 ];
 
-for (const { name, rows } of options) {
+for (const { name, rows, motherboardZ } of options) {
   for (const [wiring, allowed] of [
     ["best connector pairs", undefined],
     ["as cabled today", currentWiring],
   ] as const) {
-    const plan = planCables(rows, 0, allowed);
+    const plan = planCables(rows, motherboardZ, allowed);
     const verdict = plan.longest <= plan.maxRoute ? "reaches" : "TOO SHORT";
     console.log(
       `\nOption ${name}, ${wiring}: longest route ${plan.longest.toFixed(0)} mm of ${plan.maxRoute.toFixed(0)} mm allowed (${verdict})`,

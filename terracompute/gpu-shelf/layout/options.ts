@@ -12,17 +12,24 @@ import {
   rack,
   rails,
   type Placed,
+  type RowAirflow,
 } from "./placement.ts";
 import { assertCablesReach, cable, type CableRow } from "./cables.ts";
 
 // The layout options. Each `.brep.ts` file in this folder shows one of
 // them with a given view: plain, with GPU tier ducts, with per-GPU intake
-// shrouds, or with keepouts.
+// shrouds, with flat dividers between cards, or with keepouts.
 
-export type View = { ducts?: boolean; keepouts?: boolean; shrouds?: boolean };
+export type View = { ducts?: boolean; keepouts?: boolean; shrouds?: boolean; dividers?: boolean };
 
-// Shroud inlets open just behind the front fan wall.
+// Shroud inlets and divider fronts sit just behind the front fan wall.
 const frontInletY = 30;
+
+/** Shrouds or dividers for a row whose fresh air arrives at `inletY`. */
+const airflow = (view: View, inletY: number): RowAirflow => ({
+  shroudInletY: view.shrouds ? inletY : undefined,
+  dividerFrontY: view.dividers ? inletY : undefined,
+});
 
 const { founders, asusTuf, gigabyteAero, gigabyteWindforce, msiGamingX } = gpuCards;
 const fe = [founders, founders, founders, founders];
@@ -64,14 +71,14 @@ const stackedTiers = [motherboardTier.height, gpuTier.height, gpuTier.height];
 const stackedTierZ = stackedTiers.map((_, i) => stackedTiers.slice(0, i).reduce((a, b) => a + b, 0));
 const stackedHeight = stackedTiers.reduce((a, b) => a + b, 0);
 
-function gpuTierParts(name: string, z0: number, cards: GpuCard[], top: boolean, view: View): Placed[] {
+function gpuTierParts(name: string, z0: number, cards: GpuCard[], top: boolean, view: View, bracketY = stackedBracketY): Placed[] {
   const floorTop = z0 + gpuTier.floorThickness;
   return [
     floor(`${name} floor (placeholder)`, z0, motherboardTier.depth, gpuTier.floorThickness),
-    ...gpuRow(cards, floorTop, stackedBracketY, name, view.shrouds ? frontInletY : undefined),
+    ...gpuRow(cards, floorTop, bracketY, name, airflow(view, frontInletY)),
     fanWall(`${name} fans`, gpuFanZ(floorTop, tallest(cards))),
     ...(view.ducts
-      ? [duct(`${name} duct`, floorTop, z0 + gpuTier.height, stackedBracketY + gpuTier.bracketRail, top)]
+      ? [duct(`${name} duct`, floorTop, z0 + gpuTier.height, bracketY + gpuTier.bracketRail, top)]
       : []),
   ];
 }
@@ -137,9 +144,9 @@ export function twoRowsLayout(view: View) {
       rails(twoRowsHeight),
       ...motherboardTierParts(0),
       floor("GPU tier floor (placeholder)", z0, motherboardTier.depth, gpuTier.floorThickness),
-      ...gpuRow(fe, floorTop, frontBracketY, "front row", view.shrouds ? frontInletY : undefined),
+      ...gpuRow(fe, floorTop, frontBracketY, "front row", airflow(view, frontInletY)),
       // Rear-row inlets open just behind the front row's adapter cables.
-      ...gpuRow(partners, floorTop, rearBracketY, "rear row", view.shrouds ? frontBracketY + 30 : undefined),
+      ...gpuRow(partners, floorTop, rearBracketY, "rear row", airflow(view, frontBracketY + 30)),
       fanWall("GPU tier fans", gpuFanZ(floorTop, tallest(partners))),
       ...(view.ducts
         ? [duct("GPU tier duct", floorTop, twoRowsHeight, rearBracketY + gpuTier.bracketRail, true)]
@@ -148,3 +155,53 @@ export function twoRowsLayout(view: View) {
     view.keepouts ?? false,
   );
 }
+
+// --- Option C: three cards per tier -------------------------------------------
+// Three GPU tiers of three, three, and two cards, so each card has 60–150 mm
+// beside its fans instead of 32–41, room for shrouds or dividers that work.
+// The motherboard tier sits second from the bottom, so the top tier's
+// SlimSAS cables only climb two tiers, like option A's.
+//   1. Founders Edition and Windforce V2, 5U
+//   2. motherboard with PSUs, 4U
+//   3. three Founders Edition cards, 5U
+//   4. ASUS TUF, MSI, Aero, 5U
+// Within each tier the card with the biggest backplate exhaust sits leftmost
+// (exhausting against the side wall), as in option A.
+
+const c = {
+  tiers: [gpuTier.height, motherboardTier.height, gpuTier.height, gpuTier.height],
+  bracketY: 395,
+  rows: [
+    { label: "FE + Windforce tier", tier: 0, cards: [founders, gigabyteWindforce] },
+    { label: "FE tier", tier: 2, cards: [founders, founders, founders] },
+    { label: "TUF + MSI + Aero tier", tier: 3, cards: [asusTuf, msiGamingX, gigabyteAero] },
+  ],
+};
+const cTierZ = c.tiers.map((_, i) => c.tiers.slice(0, i).reduce((a, b) => a + b, 0));
+const cHeight = c.tiers.reduce((a, b) => a + b, 0);
+const cMotherboardZ = cTierZ[1];
+
+export const threePerTierExpected = (view: View) => expectedFor(cHeight, view);
+
+export function threePerTierCables(): CableRow[] {
+  return c.rows.map((r) => ({
+    label: r.label,
+    cards: r.cards,
+    floorTop: cTierZ[r.tier] + gpuTier.floorThickness,
+    bracketY: c.bracketY,
+  }));
+}
+
+export function threePerTierLayout(view: View) {
+  assertCablesReach(threePerTierCables(), cMotherboardZ);
+  const topTier = c.tiers.length - 1;
+  return assemble(
+    [
+      rails(cHeight),
+      ...motherboardTierParts(cMotherboardZ),
+      ...c.rows.flatMap((r) => gpuTierParts(r.label, cTierZ[r.tier], r.cards, r.tier === topTier, view, c.bracketY)),
+    ],
+    view.keepouts ?? false,
+  );
+}
+

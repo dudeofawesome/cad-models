@@ -13,7 +13,10 @@ import { block, type GpuCard, type Range } from "../references/models.ts";
 
 export const shroud = {
   wall: 2,
-  exhaustChannel: 12, // left for the next card's backplate exhaust, assumed
+  // Exhaust channel left for the next card's backplate: a third of the
+  // fan-side space, within these limits (assumed).
+  exhaustChannel: { min: 12, max: 30 },
+  maxIntake: 60, // wider than this adds print size without helping; spare goes to exhaust
   minIntake: 15, // narrowest worthwhile intake channel, assumed
   fanMargin: 3, // channel extends this far past the fan openings
   floorClearance: 14, // channel bottom stays above the adapter's cables (card Z)
@@ -22,8 +25,10 @@ export const shroud = {
 
 /** Intake channel width for a card with `fanSpace` of clear space on its fan side. */
 export function intakeWidth(fanSpace: number) {
-  const width = fanSpace - shroud.exhaustChannel - shroud.wall;
-  if (width < shroud.minIntake) throw new Error(`Only ${width.toFixed(0)} mm for an intake channel`);
+  const { exhaustChannel, wall, minIntake, maxIntake } = shroud;
+  const exhaust = Math.min(exhaustChannel.max, Math.max(exhaustChannel.min, fanSpace / 3));
+  const width = Math.min(maxIntake, fanSpace - exhaust - wall);
+  if (width < minIntake) throw new Error(`Only ${width.toFixed(0)} mm for an intake channel`);
   return width;
 }
 
@@ -69,3 +74,22 @@ export function intakeShroud(card: GpuCard, width: number, inletX: number) {
     bell(channelEnd, inletX, T + width / 2, (z0 + z1) / 2, width, z1 - z0, flare.grow, wall),
   ]);
 }
+
+/**
+ * Flat divider sheet in a card's fan-side space, in the card frame: the
+ * simpler alternative to a shroud. It sits where a shroud's outer wall
+ * would, splitting the space into an intake channel open to the front and
+ * an exhaust channel along the next card's backplate. A short front piece
+ * closes the exhaust channel so fresh air from the front goes to the
+ * intake side. `height` is the taller of the two cards.
+ */
+export function divider(card: GpuCard, fanSpace: number, frontX: number, height: number) {
+  const { wall, floorClearance } = shroud;
+  const y = card.thickness + intakeWidth(fanSpace);
+  const z: Range = [floorClearance, height];
+  return compound([
+    block([1, frontX], [y, y + wall], z),
+    block([frontX - wall, frontX], [y + wall, card.thickness + fanSpace - 1], z),
+  ]);
+}
+
