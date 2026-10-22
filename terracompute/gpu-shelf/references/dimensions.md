@@ -59,7 +59,15 @@ L = length, H = height from slot edge, T = thickness. Slot counts in brackets ar
 | MSI RTX 4090 Gaming X Trio | 337 × 140 × 77 | [3.8] | [MSI](https://www.msi.com/Graphics-Card/GeForce-RTX-4090-GAMING-X-TRIO-24G/Specification) |
 
 - the Windforce V2's power connector exits sideways through a heatsink cutout (non-mfr review)
-- 16-pin cable clearance beyond the card edge: assumed 55 (~20 plug + 35 straight run before bending, the usual 12VHPWR guidance) unless measured
+- cooling (card frame: fans on the cooler face, backplate on the other face):
+  - Founders Edition: flow-through. The fan near the bracket blows through the fins and out the large bracket vents and card edges; the tail fan, mounted on the backplate face past the short PCB, pulls air through the fins from the cooler face and exhausts out the backplate face ([Guru3D](https://www.guru3d.com/review/geforce-rtx-4090-founder-edition-review/page-3/), [LANOC](https://lanoc.org/review/video-cards/nvidia-rtx-4090-founders-edition?start=2))
+  - partner cards: three fans on the cooler face push air into the fins; it leaves mostly through the card's long edges, and at the tail some passes straight through the cooler and out the backplate face
+    - ASUS TUF: large vent at the tail of the backplate ([Vortez](https://www.vortez.net/articles_pages/asus_tuf_gaming_rtx_4090_oc_review,3.html), [ServeTheHome](https://www.servethehome.com/asus-tuf-gaming-nvidia-geforce-rtx-4090-oc-review/))
+    - MSI Gaming X Trio: "flow-through ventilation" in the backplate (retailer copy of MSI's claim)
+    - Windforce V2: "screen cooling" pass-through, with the tail corner of the cooler and backplate trimmed for the power plug ([ComputerBase](https://www.computerbase.de/2023-06/rtx-4090-windforce-v2-gigabyte-beschneidet-kuehler-um-den-stromstecker-zu-verstecken/))
+    - Aero OC: pass-through not confirmed
+  - fin direction, and so how much leaves each long edge, is not confirmed for any card
+ assumed 55 (~20 plug + 35 straight run before bending, the usual 12VHPWR guidance) unless measured
 
 ## GPU device adapter: C-Payne SlimSAS PCIe gen4 x8/x16 (CP-0200, rev 1.0)
 

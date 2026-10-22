@@ -29,6 +29,7 @@ Both options share these choices:
 - **Motherboard tier at the bottom (4U):** I/O edge at the front, with the fans above the ports so the ports stay reachable. The four Dell PSU sets sit behind the board with cords at the rear; the ATX PSU and U.2 drives sit on a shelf above them.
 - **GPUs stand on their slot edges** with their lengths running front to back and brackets at the rear. Only the brackets are fixed, to a rail behind them; each SlimSAS adapter rests under its card on standoffs, so adapters can be swapped by lifting the card. The adapters' cables leave toward the rear and drop straight down to the motherboard's SlimSAS connectors.
 - Cards are spaced so each adapter's cables clear the next card, which leaves 36–43 mm between cards for their fans to draw air.
+- All cards face the same way: fans toward +X, backplates toward −X. Cards that pass air through the tail of their cooler exhaust it out the backplate, into the gap the card on their left draws from. The partner cards are ordered left to right (ASUS TUF, MSI, Aero, Windforce V2) so the biggest pass-through vent exhausts against the side wall and the smallest cooler draws from the side wall gap. See the cooling notes in `references/dimensions.md`.
 
 | Option | Arrangement | Height |
 |---|---|---|
@@ -39,7 +40,7 @@ Both options are defined in `options.ts`. Each has three view files: `<option>.b
 
 Floors, the PSU shelf, and bracket rails are placeholders, not designed structure. Each layout throws if any part's body runs into another part's body or keepout.
 
-Each layout also checks that the SlimSAS cables reach (`layout/cables.ts`). It estimates every route as straight runs along the rack's axes: out of the adapter toward the rear, down through a gap between the motherboard and the PSUs, then to a motherboard connector. It adds 10% for slack and bends, and requires each GPU to stay on the connector pair it is cabled to today (`currentWiring`, from the setup spreadsheet). The partner cards are ordered left to right so each sits near its pair. `pnpm --filter terracompute cables` prints every route, both as cabled today and with the best possible pairs. With 1 m cables, option A's longest route is ~645 mm (~240 mm spare); option B's rear row reaches ~830 mm (~40 mm spare), since those cables have to run forward over the PSUs.
+Each layout also checks that the SlimSAS cables reach (`layout/cables.ts`). It estimates every route as straight runs along the rack's axes: out of the adapter toward the rear, down through a gap between the motherboard and the PSUs, then to a motherboard connector. It adds 10% for slack and bends, and assigns each GPU the connector pair that keeps the longest route shortest; which GPU sits on which pair doesn't matter to the machine. `pnpm --filter terracompute cables` prints every route, both with the best pairs and as cabled at build time (`currentWiring`, from the setup spreadsheet). With 1 m cables, option A's longest route is ~630 mm (~260 mm spare); option B's rear row reaches ~810 mm (~60 mm spare), since those cables have to run forward over the PSUs.
 
 ## Viewing every model
 
