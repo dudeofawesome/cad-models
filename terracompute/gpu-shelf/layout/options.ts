@@ -13,6 +13,7 @@ import {
   rails,
   type Placed,
 } from "./placement.ts";
+import { assertCablesReach, cable, type CableRow } from "./cables.ts";
 
 // The layout options. Each `.brep.ts` file in this folder shows one of
 // them with a given view: plain, with GPU tier ducts, or with keepouts.
@@ -65,7 +66,15 @@ function gpuTierParts(name: string, z0: number, cards: GpuCard[], top: boolean, 
 
 export const stackedTiersExpected = (view: View) => expectedFor(stackedHeight, view);
 
+export function stackedTiersCables(): CableRow[] {
+  return [
+    { label: "FE tier", cards: fe, floorTop: stackedTierZ[1] + gpuTier.floorThickness, bracketY: stackedBracketY },
+    { label: "partner-card tier", cards: partners, floorTop: stackedTierZ[2] + gpuTier.floorThickness, bracketY: stackedBracketY },
+  ];
+}
+
 export function stackedTiersLayout(view: View) {
+  assertCablesReach(stackedTiersCables(), stackedTierZ[0]);
   return assemble(
     [
       rails(stackedHeight),
@@ -88,9 +97,29 @@ const twoRowsHeight = motherboardTier.height + gpuTier.height;
 
 export const twoRowsExpected = (view: View) => expectedFor(twoRowsHeight, view);
 
+const twoRowsFloorTop = motherboardTier.height + gpuTier.floorThickness;
+
+export function twoRowsCables(): CableRow[] {
+  // Rear-row cables drop behind their bracket rail onto the PSUs, so they
+  // run forward above the ATX PSU, under the GPU tier floor, and drop in
+  // the gap with the front row's cables.
+  const frontDrop = frontBracketY + gpuTier.bracketRail + cable.dropBehindBracket;
+  return [
+    { label: "front row", cards: fe, floorTop: twoRowsFloorTop, bracketY: frontBracketY },
+    {
+      label: "rear row",
+      cards: partners,
+      floorTop: twoRowsFloorTop,
+      bracketY: rearBracketY,
+      overPsus: { z: motherboardTier.height - 15, rejoinY: frontDrop },
+    },
+  ];
+}
+
 export function twoRowsLayout(view: View) {
   const z0 = motherboardTier.height;
-  const floorTop = z0 + gpuTier.floorThickness;
+  const floorTop = twoRowsFloorTop;
+  assertCablesReach(twoRowsCables(), 0);
   return assemble(
     [
       rails(twoRowsHeight),

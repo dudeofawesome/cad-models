@@ -11,7 +11,8 @@
     "verify:references": "brep verify \"gpu-shelf/references/*.brep.ts\"",
     "verify:layout": "brep verify \"gpu-shelf/layout/*.brep.ts\"",
     "check": "tsc --noEmit",
-    "export": "scripts/export.sh"
+    "export": "scripts/export.sh",
+    "cables": "node scripts/cable-lengths.ts"
   },
   "dependencies": {
     "brepjs": "^18.118.3",

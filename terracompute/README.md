@@ -19,4 +19,5 @@ pnpm --filter terracompute check
 pnpm --filter terracompute verify:references
 pnpm --filter terracompute verify:layout
 pnpm --filter terracompute export
+pnpm --filter terracompute cables
 ```

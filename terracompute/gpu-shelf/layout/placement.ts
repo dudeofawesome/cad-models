@@ -99,11 +99,19 @@ export const motherboardTier = {
   standoff: 8, // assumed board standoff height
   ioSetback: 30, // I/O edge behind the front rail plane, leaving room for the fan wall
   fanZ: 106, // fan wall center height: above the I/O ports
-  psuY: 440, // front of the breakout boards, behind the motherboard's SlimSAS cables
+  // Front of the breakout boards. The gap between them and the
+  // motherboard's back-edge cables is where GPU SlimSAS cables drop through.
+  psuY: 470,
   psuGap: 5,
-  shelf: { y: [560, 760], z: 48.5, thickness: 2 }, // shelf over the PSU bodies
+  shelf: { y: [590, 790], z: 48.5, thickness: 2 }, // shelf over the PSU bodies
   depth: 900,
 } as const;
+
+/** Rack position of the motherboard's frame origin (front-left corner, PCB underside). */
+export function boardOrigin(z0: number): [number, number, number] {
+  const t = motherboardTier;
+  return [-motherboard.width / 2, t.ioSetback, z0 + t.floorThickness + t.standoff];
+}
 
 /**
  * Motherboard (I/O edge facing front), four Dell PSU sets behind it with
@@ -119,7 +127,7 @@ export function motherboardTierParts(z0: number): Placed[] {
   const board = place(
     { name: "motherboard", body: motherboardBody(), keepouts: motherboardKeepouts() },
     0,
-    [-motherboard.width / 2, t.ioSetback, floorTop + t.standoff],
+    boardOrigin(z0),
   );
 
   // PSU module frame runs board → PSU → cord along +X; turn it so that
@@ -178,10 +186,10 @@ export const gpuTier = {
 // slot runs opposite the card's length, with its cable end toward the
 // bracket; its cable side is on the card's backplate side.
 const pcbCenter = (gpu.pcb.y[0] + gpu.pcb.y[1]) / 2;
-const adapterY = deviceAdapter.slot.y[1] + gpu.fingers.x0; // card X of adapter Y = 0
-const adapterX = pcbCenter - deviceAdapter.slot.centerX; // card Y of adapter X = 0
+export const adapterY = deviceAdapter.slot.y[1] + gpu.fingers.x0; // card X of adapter Y = 0
+export const adapterX = pcbCenter - deviceAdapter.slot.centerX; // card Y of adapter X = 0
 // Card's slot edge sits 1 above the bottom of the adapter's card-edge groove.
-const cardSeat = deviceAdapter.pcbThickness + 3 + 1;
+export const cardSeat = deviceAdapter.pcbThickness + 3 + 1;
 /** How far the adapter (and its cables) stick out past the card's backplate face. */
 export const adapterOverhang = -adapterX;
 
@@ -202,6 +210,23 @@ function gpuUnit(card: GpuCard): Placed {
 export const cardLift = gpuTier.adapterStandoff + cardSeat;
 
 /**
+ * Rack X of each card's backplate face in a row, with spare width shared
+ * evenly between the cards. Each card also needs `adapterOverhang` on its
+ * backplate side for its adapter and cables.
+ */
+export function rowPositions(cards: GpuCard[], label: string): number[] {
+  const needed = cards.reduce((w, c) => w + adapterOverhang + c.thickness, 0);
+  const gap = (rack.usableWidth - needed) / (cards.length + 1);
+  if (gap < 0) throw new Error(`${label}: cards need ${needed.toFixed(0)} mm, only ${rack.usableWidth} available`);
+  let x = -rack.usableWidth / 2 + gap;
+  return cards.map((card) => {
+    const x0 = x + adapterOverhang;
+    x = x0 + card.thickness + gap;
+    return x0;
+  });
+}
+
+/**
  * A row of cards standing on their slot edges, side by side across the
  * rack, lengths running front to back with brackets at the rear (Y =
  * `bracketY`). The adapters rest loose under the cards; only the brackets
@@ -209,18 +234,12 @@ export const cardLift = gpuTier.adapterStandoff + cardSeat;
  * the cards.
  */
 export function gpuRow(cards: GpuCard[], floorTop: number, bracketY: number, label: string): Placed[] {
-  const needed = cards.reduce((w, c) => w + adapterOverhang + c.thickness, 0);
-  const gap = (rack.usableWidth - needed) / (cards.length + 1);
-  if (gap < 0) throw new Error(`${label}: cards need ${needed.toFixed(0)} mm, only ${rack.usableWidth} available`);
   const z = floorTop + cardLift;
-  let x = -rack.usableWidth / 2 + gap;
-  const units = cards.map((card) => {
-    const x0 = x + adapterOverhang;
-    x = x0 + card.thickness + gap;
-    // Card frame → rack: turn −90° so the card's length runs toward −Y from
-    // the bracket and its thickness toward +X.
-    return place(gpuUnit(card), -90, [x0, bracketY, z]);
-  });
+  // Card frame → rack: turn −90° so the card's length runs toward −Y from
+  // the bracket and its thickness toward +X.
+  const units = rowPositions(cards, label).map((x0, i) =>
+    place(gpuUnit(cards[i]), -90, [x0, bracketY, z]),
+  );
   const railTop = z + gpu.bracket.z[1];
   return [
     ...units,
