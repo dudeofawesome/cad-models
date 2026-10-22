@@ -32,6 +32,7 @@ import {
   type GpuCard,
   type Range,
 } from "../references/models.ts";
+import { intakeShroud, intakeWidth } from "./shrouds.ts";
 
 // Rack frame used by every layout. Units: mm.
 // X: across the rack, 0 on the centerline. Y: from the front rail plane
@@ -43,7 +44,9 @@ export const rack = {
   railDepth: 921, // front to rear rail planes
   unit: 44.45,
   chassisWidth: 445, // widest a chassis can be and still pass the rails
-  usableWidth: 430, // between side frame members, assumed
+  // Across the GPU tiers, inside thin side sheets; frame posts sit only at
+  // the front and rear corners, clear of the cards (assumed).
+  usableWidth: 440,
 } as const;
 
 const halfWidth = rack.chassisWidth / 2;
@@ -214,20 +217,26 @@ function gpuUnit(card: GpuCard): Placed {
 export const cardLift = gpuTier.adapterStandoff + cardSeat;
 
 /**
- * Rack X of each card's backplate face in a row, with spare width shared
- * evenly between the cards. Each card also needs `adapterOverhang` on its
- * backplate side for its adapter and cables.
+ * Where each card in a row goes, across the rack. Every card needs the same
+ * clear space on its fan side to draw air from, the rightmost card's against
+ * the side wall included; the next card's adapter sits low in that space.
+ * The leftmost card's adapter needs `adapterOverhang` beside its backplate.
+ * Returns each card's backplate face X, and the fan-side space.
  */
-export function rowPositions(cards: GpuCard[], label: string): number[] {
-  const needed = cards.reduce((w, c) => w + adapterOverhang + c.thickness, 0);
-  const gap = (rack.usableWidth - needed) / (cards.length + 1);
-  if (gap < 0) throw new Error(`${label}: cards need ${needed.toFixed(0)} mm, only ${rack.usableWidth} available`);
-  let x = -rack.usableWidth / 2 + gap;
-  return cards.map((card) => {
-    const x0 = x + adapterOverhang;
-    x = x0 + card.thickness + gap;
-    return x0;
+export function rowPositions(cards: GpuCard[], label: string): { x0: number[]; fanSpace: number } {
+  const leftMargin = adapterOverhang + 2;
+  const thickness = cards.reduce((w, c) => w + c.thickness, 0);
+  const fanSpace = (rack.usableWidth - leftMargin - thickness) / cards.length;
+  if (fanSpace < adapterOverhang + 1) {
+    throw new Error(`${label}: only ${fanSpace.toFixed(0)} mm beside each card, adapters need ${(adapterOverhang + 1).toFixed(0)}`);
+  }
+  let x = -rack.usableWidth / 2 + leftMargin;
+  const x0 = cards.map((card) => {
+    const at = x;
+    x += card.thickness + fanSpace;
+    return at;
   });
+  return { x0, fanSpace };
 }
 
 /**
@@ -237,16 +246,36 @@ export function rowPositions(cards: GpuCard[], label: string): number[] {
  * are fixed, to a rail behind them. Spare width is shared evenly between
  * the cards.
  */
-export function gpuRow(cards: GpuCard[], floorTop: number, bracketY: number, label: string): Placed[] {
+export function gpuRow(
+  cards: GpuCard[],
+  floorTop: number,
+  bracketY: number,
+  label: string,
+  /** Add intake shrouds whose inlets open at this rack Y. */
+  shroudInletY?: number,
+): Placed[] {
   const z = floorTop + cardLift;
+  const { x0: positions, fanSpace } = rowPositions(cards, label);
   // Card frame → rack: turn −90° so the card's length runs toward −Y from
   // the bracket and its thickness toward +X.
-  const units = rowPositions(cards, label).map((x0, i) =>
-    place(gpuUnit(cards[i]), -90, [x0, bracketY, z]),
-  );
+  const units = positions.map((x0, i) => place(gpuUnit(cards[i]), -90, [x0, bracketY, z]));
+  const shrouds =
+    shroudInletY === undefined
+      ? []
+      : positions.map((x0, i) =>
+          place(
+            {
+              name: `${cards[i].name} intake shroud`,
+              body: intakeShroud(cards[i], intakeWidth(fanSpace), bracketY - shroudInletY),
+            },
+            -90,
+            [x0, bracketY, z],
+          ),
+        );
   const railTop = z + gpu.bracket.z[1];
   return [
     ...units,
+    ...shrouds,
     {
       name: `${label} bracket rail`,
       body: compound([

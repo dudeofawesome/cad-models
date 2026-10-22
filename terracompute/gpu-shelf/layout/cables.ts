@@ -117,7 +117,7 @@ export type CableAssignment = { card: string; row: string; pair: string; routes:
 export function planCables(rows: CableRow[], motherboardZ0: number, allowed?: Record<string, string[]>) {
   const pairs = boardConnectorPairs(motherboardZ0);
   const cards = rows.flatMap((row) =>
-    rowPositions(row.cards, row.label).map((x0, i) => ({
+    rowPositions(row.cards, row.label).x0.map((x0, i) => ({
       name: row.cards[i].name,
       row,
       ends: adapterEnds(row.cards[i], x0, row.bracketY, row.floorTop),

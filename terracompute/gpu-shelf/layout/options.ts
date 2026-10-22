@@ -16,9 +16,13 @@ import {
 import { assertCablesReach, cable, type CableRow } from "./cables.ts";
 
 // The layout options. Each `.brep.ts` file in this folder shows one of
-// them with a given view: plain, with GPU tier ducts, or with keepouts.
+// them with a given view: plain, with GPU tier ducts, with per-GPU intake
+// shrouds, or with keepouts.
 
-export type View = { ducts?: boolean; keepouts?: boolean };
+export type View = { ducts?: boolean; keepouts?: boolean; shrouds?: boolean };
+
+// Shroud inlets open just behind the front fan wall.
+const frontInletY = 30;
 
 const { founders, asusTuf, gigabyteAero, gigabyteWindforce, msiGamingX } = gpuCards;
 const fe = [founders, founders, founders, founders];
@@ -64,7 +68,7 @@ function gpuTierParts(name: string, z0: number, cards: GpuCard[], top: boolean, 
   const floorTop = z0 + gpuTier.floorThickness;
   return [
     floor(`${name} floor (placeholder)`, z0, motherboardTier.depth, gpuTier.floorThickness),
-    ...gpuRow(cards, floorTop, stackedBracketY, name),
+    ...gpuRow(cards, floorTop, stackedBracketY, name, view.shrouds ? frontInletY : undefined),
     fanWall(`${name} fans`, gpuFanZ(floorTop, tallest(cards))),
     ...(view.ducts
       ? [duct(`${name} duct`, floorTop, z0 + gpuTier.height, stackedBracketY + gpuTier.bracketRail, top)]
@@ -133,8 +137,9 @@ export function twoRowsLayout(view: View) {
       rails(twoRowsHeight),
       ...motherboardTierParts(0),
       floor("GPU tier floor (placeholder)", z0, motherboardTier.depth, gpuTier.floorThickness),
-      ...gpuRow(fe, floorTop, frontBracketY, "front row"),
-      ...gpuRow(partners, floorTop, rearBracketY, "rear row"),
+      ...gpuRow(fe, floorTop, frontBracketY, "front row", view.shrouds ? frontInletY : undefined),
+      // Rear-row inlets open just behind the front row's adapter cables.
+      ...gpuRow(partners, floorTop, rearBracketY, "rear row", view.shrouds ? frontBracketY + 30 : undefined),
       fanWall("GPU tier fans", gpuFanZ(floorTop, tallest(partners))),
       ...(view.ducts
         ? [duct("GPU tier duct", floorTop, twoRowsHeight, rearBracketY + gpuTier.bracketRail, true)]

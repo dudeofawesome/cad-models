@@ -28,7 +28,7 @@ Both options share these choices:
 - **Airflow front to back**, with a wall of three 140 mm fans at the front of each tier.
 - **Motherboard tier at the bottom (4U):** I/O edge at the front, with the fans above the ports so the ports stay reachable. The four Dell PSU sets sit behind the board with cords at the rear; the ATX PSU and U.2 drives sit on a shelf above them.
 - **GPUs stand on their slot edges** with their lengths running front to back and brackets at the rear. Only the brackets are fixed, to a rail behind them; each SlimSAS adapter rests under its card on standoffs, so adapters can be swapped by lifting the card. The adapters' cables leave toward the rear and drop straight down to the motherboard's SlimSAS connectors.
-- Cards are spaced so each adapter's cables clear the next card, which leaves 36–43 mm between cards for their fans to draw air.
+- Every card gets the same clear space on its fan side to draw air from, the rightmost card's against the side wall included: ~32 mm in the partner-card tier, ~41 mm in the Founders Edition tier. The next card's adapter sits low in that space.
 - All cards face the same way: fans toward +X, backplates toward −X. Cards that pass air through the tail of their cooler exhaust it out the backplate, into the gap the card on their left draws from. The partner cards are ordered left to right (ASUS TUF, MSI, Aero, Windforce V2) so the biggest pass-through vent exhausts against the side wall and the smallest cooler draws from the side wall gap. See the cooling notes in `references/dimensions.md`.
 
 | Option | Arrangement | Height |
@@ -36,7 +36,9 @@ Both options share these choices:
 | A, `stacked-tiers` | two GPU tiers of four (Founders Edition cards in one, partner cards in the other), each with its own fresh air | 14U |
 | B, `two-rows` | one GPU tier with a front and a rear row; the rear row breathes air the front row has heated | 9U |
 
-Both options are defined in `options.ts`. Each has three view files: `<option>.brep.ts` (plain), `<option>.ducts.brep.ts` (thin side sheets and a top turn each GPU tier into a front-to-back duct), and `<option>.keepouts.brep.ts` (reserved cable space shown).
+Both options are defined in `options.ts`. Each has four view files: `<option>.brep.ts` (plain), `<option>.ducts.brep.ts` (thin side sheets and a top turn each GPU tier into a front-to-back duct), `<option>.shrouds.brep.ts` (a 3D-printed intake shroud on each GPU's fan side, see `shrouds.ts`), and `<option>.keepouts.brep.ts` (reserved cable space shown).
+
+The intake shrouds fit, but in these layouts their channels are only ~18 mm (partner cards) and ~27 mm (Founders Edition) wide: under a tenth of the fans' opening area, too narrow to feed the fans well. Wider spacing between cards is needed before shrouds are worthwhile.
 
 Floors, the PSU shelf, and bracket rails are placeholders, not designed structure. Each layout throws if any part's body runs into another part's body or keepout.
 
