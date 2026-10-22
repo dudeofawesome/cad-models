@@ -58,7 +58,19 @@ L = length, H = height from slot edge, T = thickness. Slot counts in brackets ar
 | Gigabyte RTX 4090 Windforce V2 | 331 × 136 × 55.5 | [2.7] | [Gigabyte](https://www.gigabyte.com/Graphics-Card/GV-N4090WF3V2-24GD-rev-10-11/sp) |
 | MSI RTX 4090 Gaming X Trio | 337 × 140 × 77 | [3.8] | [MSI](https://www.msi.com/Graphics-Card/GeForce-RTX-4090-GAMING-X-TRIO-24G/Specification) |
 
-- the Windforce V2's power connector exits sideways through a heatsink cutout (non-mfr review)
+- the Windforce V2's power connector exits sideways through a heatsink cutout (non-mfr review); on every other card it points up (user, 2026-10-21)
+- fan centers and diameters, and where the PCIe edge fingers start, are measured from each maker's straight-on fan-side product photo (supplied by the user), scaled so the shroud spans the published length (±3). X is from the bracket end of the shroud, Z from the bottom of the edge fingers:
+
+  | Card | Fans (X, Z, ⌀) | Fingers start |
+  |---|---|---|
+  | Founders Edition | (55, 71, 110) on the fan face; tail fan on the backplate face ~(255, 71, ⌀100), estimated from the tail section's outline | 48 |
+  | ASUS TUF | (60, 77), (174, 77), (289, 76), ⌀108 | 55 |
+  | Aero OC | (59, 77), (171, 76), (283, 77), ⌀110–112 | 57 |
+  | Windforce V2 | (56, 71), (165, 70), (274, 71), ⌀104 | 52 |
+  | MSI Gaming X Trio | (56, 72), (167, 72), (279, 72), ⌀102 | 46 |
+
+  - the edge fingers measure 77–84 long across the photos; ~81 is used
+  - pass-through openings in the backplates are placed behind each card's tail fan and are estimates; their real outlines are not measured
 - cooling (card frame: fans on the cooler face, backplate on the other face):
   - Founders Edition: flow-through. The fan near the bracket blows through the fins and out the large bracket vents and card edges; the tail fan, mounted on the backplate face past the short PCB, pulls air through the fins from the cooler face and exhausts out the backplate face ([Guru3D](https://www.guru3d.com/review/geforce-rtx-4090-founder-edition-review/page-3/), [LANOC](https://lanoc.org/review/video-cards/nvidia-rtx-4090-founders-edition?start=2))
   - partner cards: three fans on the cooler face push air into the fins; it leaves mostly through the card's long edges, and at the tail some passes straight through the cooler and out the backplate face

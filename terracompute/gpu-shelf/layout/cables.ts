@@ -1,7 +1,7 @@
 import { deviceAdapter, motherboard, type GpuCard } from "../references/models.ts";
 import {
   adapterX,
-  adapterY,
+  adapterYFor,
   boardOrigin,
   cardLift,
   cardSeat,
@@ -86,10 +86,10 @@ export const currentWiring: Record<string, string[]> = {
 
 // The adapter's two SlimSAS connectors for a card, in rack coordinates,
 // at the face the cable leaves from. Mirrors the card placement in gpuRow.
-function adapterEnds(x0: number, bracketY: number, floorTop: number): [Point, Point] {
+function adapterEnds(card: GpuCard, x0: number, bracketY: number, floorTop: number): [Point, Point] {
   const cardZ = floorTop + cardLift;
   return deviceAdapter.slimsas.map(({ x, y }) => {
-    const cx = adapterY - y[1];
+    const cx = adapterYFor(card) - y[1];
     const cy = (x[0] + x[1]) / 2 + adapterX;
     const cz = deviceAdapter.pcbThickness + deviceAdapter.slimsasHeight / 2 - cardSeat;
     return { x: x0 + cy, y: bracketY - cx, z: cardZ + cz };
@@ -120,7 +120,7 @@ export function planCables(rows: CableRow[], motherboardZ0: number, allowed?: Re
     rowPositions(row.cards, row.label).map((x0, i) => ({
       name: row.cards[i].name,
       row,
-      ends: adapterEnds(x0, row.bracketY, row.floorTop),
+      ends: adapterEnds(row.cards[i], x0, row.bracketY, row.floorTop),
     })),
   );
   // Route lengths for card i on pair j, crossing the two cables whichever

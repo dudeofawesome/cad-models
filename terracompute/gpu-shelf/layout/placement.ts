@@ -186,23 +186,27 @@ export const gpuTier = {
 // slot runs opposite the card's length, with its cable end toward the
 // bracket; its cable side is on the card's backplate side.
 const pcbCenter = (gpu.pcb.y[0] + gpu.pcb.y[1]) / 2;
-export const adapterY = deviceAdapter.slot.y[1] + gpu.fingers.x0; // card X of adapter Y = 0
+// The card's fingers start a little inside the slot's key end: the slot
+// housing is 89 long, the fingers ~81, centered.
+const fingerInset = (deviceAdapter.slot.y[1] - deviceAdapter.slot.y[0] - gpu.fingers.length) / 2;
+/** Card X of adapter Y = 0, for a given card. */
+export const adapterYFor = (card: GpuCard) => deviceAdapter.slot.y[1] - fingerInset + card.fingersX0;
 export const adapterX = pcbCenter - deviceAdapter.slot.centerX; // card Y of adapter X = 0
 // Card's slot edge sits 1 above the bottom of the adapter's card-edge groove.
 export const cardSeat = deviceAdapter.pcbThickness + 3 + 1;
 /** How far the adapter (and its cables) stick out past the card's backplate face. */
 export const adapterOverhang = -adapterX;
 
-function inCardFrame(s: Shape) {
-  return translate(rotate(s, 90, { axis: [0, 0, 1] }), [adapterY, adapterX, -cardSeat]);
+function inCardFrame(card: GpuCard, s: Shape) {
+  return translate(rotate(s, 90, { axis: [0, 0, 1] }), [adapterYFor(card), adapterX, -cardSeat]);
 }
 
 /** A card plugged into its adapter, in the card frame. */
 function gpuUnit(card: GpuCard): Placed {
   return {
     name: card.name,
-    body: compound([gpuBody(card), inCardFrame(deviceAdapterBody())]),
-    keepouts: compound([gpuKeepouts(card), inCardFrame(deviceAdapterKeepouts())]),
+    body: compound([gpuBody(card), inCardFrame(card, deviceAdapterBody())]),
+    keepouts: compound([gpuKeepouts(card), inCardFrame(card, deviceAdapterKeepouts())]),
   };
 }
 
