@@ -1,4 +1,12 @@
-import { box, compound, cylinder, sketchRoundedRectangle } from "brepjs";
+import {
+  box,
+  compound,
+  cylinder,
+  fuse,
+  sketchRoundedRectangle,
+  translate,
+  unwrap,
+} from "brepjs";
 import { dockFootprint, dockFootprintSize } from "./dock-footprint.ts";
 
 // Layout envelopes, not reverse-engineered product surfaces. Units: mm.
@@ -17,6 +25,8 @@ export const dimensions = {
   // Bottom outline from bottom.dxf; height and port placement are estimates.
   dock: {
     ...dockFootprintSize,
+    lipStartHeight: 2.3,
+    lipDepth: 0.4,
     height: 10,
     usbCenterHeight: 5,
   },
@@ -38,9 +48,17 @@ export function transmitterEnvelope() {
 }
 
 export function dockEnvelope() {
-  // Straight extrusion of the supplied bottom contour. The side profile,
-  // seating depth and USB orientation remain unconfirmed.
-  return dockFootprint().sketchOnPlane("XY").extrude(dimensions.dock.height);
+  const p = dimensions.dock;
+  // Keep the bottom envelope up to the measured lip shoulder, then inset
+  // the upper housing by the lip depth. Detailed lower surfaces, overall
+  // height and USB orientation remain unconfirmed.
+  const lower = dockFootprint().sketchOnPlane("XY").extrude(p.lipStartHeight);
+  const upper = translate(
+    dockFootprint().offset(p.lipDepth).sketchOnPlane("XY")
+      .extrude(p.height - p.lipStartHeight + 0.01),
+    [0, 0, p.lipStartHeight - 0.01],
+  );
+  return unwrap(fuse(lower, upper));
 }
 
 export function usbCableEnvelope() {

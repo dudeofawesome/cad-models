@@ -4,6 +4,7 @@ import {
   box,
   cut,
   cylinder,
+  draw,
   fuse,
   getSolids,
   loft,
@@ -11,7 +12,8 @@ import {
   translate,
   unwrap,
 } from "brepjs";
-import { dockFootprint } from "./references/dock-footprint.ts";
+import { dockFootprint, dockFootprintSize } from "./references/dock-footprint.ts";
+import { dimensions } from "./references/models.ts";
 
 // Millimeters. A shallow locating tray: only the measured dock bottom is
 // captured, leaving its unmeasured upper housing and the TXs exposed.
@@ -19,6 +21,11 @@ export const parameters = {
   height: 14,
   dockPocketDepth: 3,
   dockClearance: 0.3, // per side; tune with a fit print
+  dockTabEngagement: 0.25, // overlap into the measured 0.4 mm lip
+  dockTabVerticalClearance: 0.1,
+  dockTabWidth: 3,
+  dockTabTipHeight: 0.2,
+  dockTabCenterY: 1.23, // widest side points in bottom.dxf
   magnetDiameter: 6.5, // glue pockets for nominal 6 × 2 mm magnets
   magnetDepth: 2.4,
   cableDiameter: 3.2,
@@ -77,6 +84,19 @@ export default function bin() {
   if (dockSeatHeight < baseHeight + 1.2 || p.dockPocketDepth <= 0) {
     throw new Error("Dock pockets must leave at least 1.2 mm above the feet");
   }
+  const tabBottom =
+    dockSeatHeight + dimensions.dock.lipStartHeight + p.dockTabVerticalClearance;
+  if (
+    p.dockClearance < 0 ||
+    p.dockTabEngagement <= 0 ||
+    p.dockTabEngagement >= dimensions.dock.lipDepth ||
+    p.dockTabVerticalClearance < 0 ||
+    p.dockTabWidth <= 0 ||
+    p.dockTabTipHeight <= 0 ||
+    tabBottom + p.dockTabTipHeight >= p.height
+  ) {
+    throw new Error("Dock tabs must overlap the lip, clear its shoulder and leave room for an insertion ramp");
+  }
   const channelDiameter = p.cableDiameter - p.cableInterference;
   const channelRadius = channelDiameter / 2;
   const channelZ = p.height - p.cableChannelRoof - channelRadius;
@@ -125,6 +145,29 @@ export default function bin() {
       { at: [x, depth / 4, dockSeatHeight + (p.dockPocketDepth + overlap) / 2] },
     );
     body = unwrap(cut(body, access));
+
+    // Keep a flat retaining ledge over the dock lip. A 45° underside ramp
+    // supports the projection across the pocket clearance, reducing the
+    // unsupported ledge to the engagement width. Upper ramps ease insertion.
+    const ledgeX = dockFootprintSize.width / 2;
+    const tipX = ledgeX - p.dockTabEngagement;
+    const wallX = ledgeX + p.dockClearance;
+    const rootX = wallX + 0.8; // real overlap into the pocket wall
+    const rootBottom = tabBottom - p.dockClearance;
+    for (const side of [-1, 1]) {
+      const profile = draw([side * tipX, tabBottom])
+        .lineTo([side * ledgeX, tabBottom]);
+      if (p.dockClearance > 0) profile.lineTo([side * wallX, rootBottom]);
+      const tab = profile
+        .lineTo([side * rootX, rootBottom])
+        .lineTo([side * rootX, p.height])
+        .lineTo([side * wallX, p.height])
+        .lineTo([side * tipX, tabBottom + p.dockTabTipHeight])
+        .close()
+        .sketchOnPlane("XZ", [x, p.dockTabCenterY + p.dockTabWidth / 2, 0])
+        .extrude(p.dockTabWidth);
+      body = unwrap(fuse(body, tab));
+    }
   }
 
   // Top-front and top-back channels each have vertically stacked round
