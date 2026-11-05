@@ -32,3 +32,6 @@ thumbs.db
 !.vscode/launch.json
 !.vscode/extensions.json
 *.sublime-workspace
+
+# backups
+*.bak
